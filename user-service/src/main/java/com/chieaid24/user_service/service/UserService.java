@@ -34,7 +34,7 @@ public class UserService {
     return userRepository.findById(id).map(this::toDto).orElse(null);
   }
 
-  public void updateUser(Long id, UserDto userDto) {
+  public UserDto updateUser(Long id, UserDto userDto) {
     User existingUser =
         userRepository
             .findById(id)
@@ -48,6 +48,8 @@ public class UserService {
     existingUser.setEnergyAlertingThreshold(userDto.getEnergyAlertingThreshold());
 
     userRepository.save(existingUser);
+    return toDto(existingUser);
+
   }
 
   public void deleteUser(Long id) {
