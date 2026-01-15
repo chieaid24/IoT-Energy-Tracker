@@ -22,7 +22,7 @@ public class UserController {
     this.userService = userService;
   }
 
-  @PostMapping
+  @PostMapping("/create")
   public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
     UserDto created = userService.createUser(userDto);
     return new ResponseEntity<>(created, HttpStatus.CREATED);
@@ -38,13 +38,13 @@ public class UserController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+  public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
 
     try {
-      userService.updateUser(id, userDto);
-      return ResponseEntity.ok("User updated successfully");
+      UserDto updated = userService.updateUser(id, userDto);
+      return ResponseEntity.ok(updated);
     } catch (IllegalArgumentException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
   }
 
