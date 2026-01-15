@@ -17,9 +17,6 @@ public class UserService {
   }
 
   public UserDto createUser(UserDto input) {
-    // simulate user creation logic
-    log.info("Creating user: {}", input);
-
     final User createdUser =
         User.builder()
             .name(input.getName())
@@ -32,14 +29,12 @@ public class UserService {
     User saved = userRepository.save(createdUser);
     return toDto(saved);
   }
-
+  
   public UserDto getUserById(Long id) {
-    log.info("Fetching user with id: {}", id);
     return userRepository.findById(id).map(this::toDto).orElse(null);
   }
 
   public void updateUser(Long id, UserDto userDto) {
-    log.info("Updating user with id: {}", id);
     User existingUser =
         userRepository
             .findById(id)
@@ -56,7 +51,6 @@ public class UserService {
   }
 
   public void deleteUser(Long id) {
-    log.info("Deleting user with id: {}", id);
     User existingUser =
         userRepository
             .findById(id)
