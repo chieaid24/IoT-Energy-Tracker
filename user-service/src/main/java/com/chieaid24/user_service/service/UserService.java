@@ -49,7 +49,6 @@ public class UserService {
 
     userRepository.save(existingUser);
     return toDto(existingUser);
-
   }
 
   public void deleteUser(Long id) {
