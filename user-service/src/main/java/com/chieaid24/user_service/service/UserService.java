@@ -29,7 +29,7 @@ public class UserService {
     User saved = userRepository.save(createdUser);
     return toDto(saved);
   }
-  
+
   public UserDto getUserById(Long id) {
     return userRepository.findById(id).map(this::toDto).orElse(null);
   }

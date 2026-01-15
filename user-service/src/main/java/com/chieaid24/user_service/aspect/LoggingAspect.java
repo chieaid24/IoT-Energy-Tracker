@@ -27,7 +27,6 @@ public class LoggingAspect {
 
   @AfterReturning(pointcut = "serviceMethods()", returning = "result")
   public void logAfterReturning(JoinPoint joinPoint, Object result) {
-    log.info("Service method: {} returned: {}",
-        joinPoint.getSignature().getName(), result);
+    log.info("Service method: {} returned: {}", joinPoint.getSignature().getName(), result);
   }
 }
