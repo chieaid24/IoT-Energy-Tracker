@@ -1,22 +1,19 @@
 package com.chieaid24.user_service;
 
+import com.chieaid24.user_service.entity.User;
+import com.chieaid24.user_service.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import com.chieaid24.user_service.entity.User;
-import com.chieaid24.user_service.repository.UserRepository;
-
-import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest
 @Slf4j
 class UserServiceApplicationTests {
 
   private static final int NUM_USERS = 10;
-  @Autowired
-  private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
   @Test
   void contextLoads() {}
@@ -33,8 +30,7 @@ class UserServiceApplicationTests {
               .address(i + "Example St, City")
               .alerting(i % 2 == 0)
               .energyAlertingThreshold(1000.0 + i)
-              .build()
-      );
+              .build());
     }
     log.info("User Repository created with {} users", userRepository.count());
   }
