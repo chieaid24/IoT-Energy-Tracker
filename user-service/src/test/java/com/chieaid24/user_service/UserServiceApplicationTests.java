@@ -18,6 +18,7 @@ class UserServiceApplicationTests {
   @Test
   void contextLoads() {}
 
+  // Create 10 sample users for testing
   @Disabled
   @Test
   void createUsers() {

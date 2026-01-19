@@ -24,6 +24,7 @@ class DeviceServiceApplicationTests {
 	void contextLoads() {
 	}
 
+	// create 200 mock devices for testing over 10 users
 	@Disabled
 	@Test
 	void createDevices() {
