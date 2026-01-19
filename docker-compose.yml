@@ -6,11 +6,15 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: energy_tracker
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     ports:
       - "3306:3306"
     volumes:
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - db-data:/var/lib/mysql
       - db-data:/var/lib/mysql
 
   kafka:
@@ -106,6 +110,121 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  ollama:
+    image: ollama/ollama:latest
+    pull_policy: if_not_present
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: []
+    command:
+      - /bin/sh
+      - -c
+      - |
+          ollama serve &
+          i=0;
+          until ollama list >/dev/null 2>&1; do
+            i=$$((i+1));
+            if [ "$$i" -ge 60 ]; then
+              echo "Ollama did not become ready in 60 seconds" >&2;
+              exit 1;
+            fi;
+            sleep 1;
+          done;
+          ollama pull deepseek-r1;
+          wait
+
+  user-service:
+    build:
+      context: ./user-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  device-service:
+    build:
+      context: ./device-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  ingestion-service:
+    build:
+      context: ./ingestion-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SIMULATION_ENDPOINT: http://ingestion-service:8082/api/v1/ingestion
+    depends_on:
+      - kafka
+
+  usage-service:
+    build:
+      context: ./usage-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: my-token
+      INFLUX_ORG: chieaid24
+      INFLUX_BUCKET: usage-bucket
+      DEVICE_SERVICE_URL: http://device-service:8081/api/v1/device
+      USER_SERVICE_URL: http://user-service:8080/api/v1/user
+    depends_on:
+      - kafka
+      - influxdb
+      - device-service
+      - user-service
+
+  alert-service:
+    build:
+      context: ./alert-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      mailpit:
+        condition: service_started
+
+  insight-service:
+    build:
+      context: ./insight-service
+    ports:
+      - "8085:8085"
+    environment:
+      USAGE_SERVICE_URL: http://usage-service:8083/api/v1/usage
+      SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
+    depends_on:
+      - usage-service
+      - ollama
+
 volumes:
   db-data:
   kafka-data:
+  ollama-data:
