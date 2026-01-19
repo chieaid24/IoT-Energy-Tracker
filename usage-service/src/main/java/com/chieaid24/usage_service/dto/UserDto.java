@@ -6,8 +6,8 @@ public record UserDto(
         String surname,
         String email,
         String address,
-        boolean alerting,
-        double energyAlertingThreshold
+        Boolean alerting,
+        Double energyAlertingThreshold
 ) {
 
 }

@@ -1,5 +1,7 @@
 package com.chieaid24.device_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,4 +56,13 @@ public class DeviceController {
         deviceService.deleteDevice(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<DeviceDto>> getAllDevicesByUserId(
+        @PathVariable Long userId
+    ) {
+        List<DeviceDto> devices = deviceService.getAllDevicesByUserId(userId);
+        return ResponseEntity.ok(devices);
+    }
+    
 }
