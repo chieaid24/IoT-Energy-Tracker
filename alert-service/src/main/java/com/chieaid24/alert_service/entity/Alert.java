@@ -1,6 +1,5 @@
 package com.chieaid24.alert_service.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
