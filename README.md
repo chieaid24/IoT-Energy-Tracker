@@ -1,6 +1,6 @@
-# Home IoT Energy Tracker
+<h1 align="center">⚡️ Home IoT Energy Tracker</h1>
 
-> A Java Spring Boot microservice-based architecture to handle 500k+ users and 2.5m+ devices, aggregating energy usage, analyzing and storing time-series data, and producing AI-approved efficiency insights.
+> Java Spring Boot microservice-based architecture to handle 500k+ users and 2.5m+ devices. Aggregates energy usage, analyzes + stores time-series IoT data, and produces AI-approved efficiency insights.
 
 ## System Design
 <img width="6288" height="4516" alt="IoT Telemetry System Design4" src="https://github.com/user-attachments/assets/74640047-1b3c-47b9-98df-3fb663cf7181" />
