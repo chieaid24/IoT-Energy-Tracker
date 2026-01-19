@@ -25,7 +25,7 @@ class DeviceServiceApplicationTests {
 	}
 
 	// create 200 mock devices for testing over 10 users
-	@Disabled
+	// @Disabled
 	@Test
 	void createDevices() {
 		for (int i = 1; i <= NUM_DEVICES; i++) {
