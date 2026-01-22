@@ -59,6 +59,26 @@ public class UserService {
     userRepository.delete(existingUser);
   }
 
+  public void createDummyUsers(int users) {
+    for (int i = 1; i <= users; i++) {
+      User dummyUser =
+          User.builder()
+              .name("Dummy " + i)
+              .surname("Surname " + i)
+              .email("dummy" + i + "@example.com")
+              .address("Dummy Address " + i)
+              .alerting(i % 2 == 0)
+              .energyAlertingThreshold(1000.0 + (i * 10))
+              .build();
+      userRepository.save(dummyUser);
+    }
+    log.info("Created {} dummy users", users);
+  }
+
+  public Long getTotalUsers() {
+    return userRepository.count();
+  }
+
   private UserDto toDto(User user) {
     return UserDto.builder()
         .id(user.getId())

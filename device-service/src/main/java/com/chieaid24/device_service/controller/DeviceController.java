@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.chieaid24.device_service.dto.DeviceDto;
@@ -39,10 +40,22 @@ public class DeviceController {
         }
     }
 
+    @GetMapping("/total")
+    public ResponseEntity<Long> getTotalDevices() {
+        Long total = deviceService.getTotalDevices();
+        return ResponseEntity.ok(total);
+    }
+
     @PostMapping("/create")
     public ResponseEntity<DeviceDto> createDevice(@RequestBody DeviceDto deviceDto) {
         DeviceDto created = deviceService.createDevice(deviceDto);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/create/dummy")
+    public ResponseEntity<Integer> createDummyDevices(@RequestParam int devices) {
+        deviceService.createDummyDevices(devices);
+        return ResponseEntity.status(HttpStatus.CREATED).body(devices);
     }
 
     @PutMapping("/{id}")

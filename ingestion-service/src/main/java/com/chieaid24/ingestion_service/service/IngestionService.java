@@ -25,6 +25,6 @@ public class IngestionService {
             .build();
 
         kafkaTemplate.send("energy-usage", event);
-        log.info("Ingested energy usage event: {}", event);
+        // log.info("Ingested energy usage event: {}", event);
     }
 }

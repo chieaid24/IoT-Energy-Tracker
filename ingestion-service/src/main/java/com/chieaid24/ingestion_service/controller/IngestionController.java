@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class IngestionController {
 
     private final IngestionService ingestionService;
+    
     public IngestionController(IngestionService ingestionService) {
         this.ingestionService = ingestionService;
     }

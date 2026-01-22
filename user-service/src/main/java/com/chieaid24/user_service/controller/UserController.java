@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,6 +29,13 @@ public class UserController {
     return new ResponseEntity<>(created, HttpStatus.CREATED);
   }
 
+  // ex) POST /api/v1/user/create/dummy?users=10
+  @PostMapping("/create/dummy")
+  public ResponseEntity<Integer> createDummyUsers(@RequestParam int users) {
+    userService.createDummyUsers(users);
+    return ResponseEntity.status(HttpStatus.CREATED).body(users);
+  }
+
   @GetMapping("/{id}")
   public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
     UserDto userDto = userService.getUserById(id);
@@ -35,6 +43,12 @@ public class UserController {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
     return ResponseEntity.ok(userDto);
+  }
+
+  @GetMapping("/total")
+  public ResponseEntity<Long> getTotalUsers() {
+    Long total = userService.getTotalUsers();
+    return ResponseEntity.ok(total);
   }
 
   @PutMapping("/{id}")

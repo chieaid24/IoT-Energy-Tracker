@@ -9,5 +9,6 @@ public enum DeviceType {
     DOORBELL,
     HEATER,
     REFRIGERATOR,
-    AIR_CONDITIONER
+    AIR_CONDITIONER,
+    TV
 }
