@@ -31,9 +31,9 @@ public class UserController {
 
   // ex) POST /api/v1/user/create/dummy?users=10
   @PostMapping("/create/dummy")
-  public ResponseEntity<Void> createDummyUsers(@RequestParam int users) {
+  public ResponseEntity<Integer> createDummyUsers(@RequestParam int users) {
     userService.createDummyUsers(users);
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    return ResponseEntity.status(HttpStatus.CREATED).body(users);
   }
 
   @GetMapping("/{id}")
