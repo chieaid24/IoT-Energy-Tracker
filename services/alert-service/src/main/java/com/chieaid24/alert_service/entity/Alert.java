@@ -12,6 +12,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// alert entity to store alerts sent to users
+// some change
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

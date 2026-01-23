@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/v1/ingestion")
 public class IngestionController {
 
+    // init vars
     private final IngestionService ingestionService;
     
     public IngestionController(IngestionService ingestionService) {

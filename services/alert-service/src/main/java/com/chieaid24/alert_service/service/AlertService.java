@@ -17,6 +17,7 @@ public class AlertService {
     }
 
     // TODO: prettify the content, and add more info like device details, timestamp, etc
+    // also handle failures and retries
     @KafkaListener(topics = "energy-alerts", groupId = "alert-service")
     public void energyUsageAlertEvent(AlertingEvent alertingEvent) {
         log.info("Received alerting event: {}", alertingEvent);

@@ -18,7 +18,7 @@ import com.chieaid24.device_service.dto.DeviceDto;
 import com.chieaid24.device_service.service.DeviceService;
 
 /*
-    TODO: Add getAllDevices endpoint with pagination and filtering by userId and deviceType
+    TODO: Add getAllDevices endpoint with pagination and filtering by userId and deviceTypea
 */
 
 @RestController
