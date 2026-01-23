@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/usage")
 public class UsageController {
-  //
+  // init vars
 
   private final UsageService usageService;
 

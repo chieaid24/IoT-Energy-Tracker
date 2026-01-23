@@ -38,6 +38,7 @@ public class DeviceController {
     }
   }
 
+  //get total devices
   @GetMapping("/total")
   public ResponseEntity<Long> getTotalDevices() {
     Long total = deviceService.getTotalDevices();

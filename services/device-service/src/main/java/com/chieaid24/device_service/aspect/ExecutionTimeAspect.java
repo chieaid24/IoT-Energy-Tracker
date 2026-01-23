@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ExecutionTimeAspect {
 
+  
   @Pointcut("execution(* com.chieaid24.device_service.controller.*.*(..))")
   public void controllerMethods() {}
 
