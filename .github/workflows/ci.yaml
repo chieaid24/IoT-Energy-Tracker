@@ -19,6 +19,18 @@ jobs:
           filters: |
             services:
               - 'services/**'
+      - id: normalize
+        run: |
+          echo '${{ steps.filter.outputs.services_files }}' \
+          | jq -c '
+              map(split("/")[:2] | join("/"))
+              | unique
+            ' > services.json
+  
+          echo "Changed service folders:"
+          cat services.json
+  
+          echo "services=$(cat services.json)" >> $GITHUB_OUTPUT
                 
   build-and-push:
     name: Build and Push
@@ -61,6 +73,7 @@ jobs:
         docker push $IMAGE_URI:$IMAGE_TAG
         # echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         echo "image=$IMAGE_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
 
 
 
