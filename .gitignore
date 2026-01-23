@@ -50,6 +50,7 @@ out/
 # Build
 build/
 dist/
+influxdb_data/
 
 # Gradle
 .gradle/
@@ -121,3 +122,4 @@ env/
 # Zone.Identifier files (Windows shortcuts)
 *:Zone.Identifier
 *Zone.Identifier
+
