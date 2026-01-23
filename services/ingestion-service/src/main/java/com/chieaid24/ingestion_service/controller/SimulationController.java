@@ -12,34 +12,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/ingestion/simulation")
 public class SimulationController {
 
-    private final ParallelDataSimulator simulator;
+  private final ParallelDataSimulator simulator;
 
-    public SimulationController(ParallelDataSimulator simulator) {
-        this.simulator = simulator;
+  public SimulationController(ParallelDataSimulator simulator) {
+    this.simulator = simulator;
+  }
+
+  @PostMapping("/start")
+  public ResponseEntity<Void> start() {
+    boolean started = simulator.start();
+    if (started) {
+      return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
+    return ResponseEntity.status(HttpStatus.CONFLICT).build();
+  }
 
-    @PostMapping("/start")
-    public ResponseEntity<Void> start() {
-        boolean started = simulator.start();
-        if (started) {
-            return ResponseEntity.status(HttpStatus.ACCEPTED).build();
-        }
-        return ResponseEntity.status(HttpStatus.CONFLICT).build();
+  @PostMapping("/stop")
+  public ResponseEntity<Void> stop() {
+    boolean stopped = simulator.stop();
+    if (stopped) {
+      return ResponseEntity.ok().build();
     }
+    return ResponseEntity.status(HttpStatus.CONFLICT).build();
+  }
 
-    @PostMapping("/stop")
-    public ResponseEntity<Void> stop() {
-        boolean stopped = simulator.stop();
-        if (stopped) {
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.status(HttpStatus.CONFLICT).build();
-    }
+  @GetMapping("/status")
+  public ResponseEntity<SimulationStatus> status() {
+    return ResponseEntity.ok(new SimulationStatus(simulator.isRunning()));
+  }
 
-    @GetMapping("/status")
-    public ResponseEntity<SimulationStatus> status() {
-        return ResponseEntity.ok(new SimulationStatus(simulator.isRunning()));
-    }
-
-    public record SimulationStatus(boolean running) {}
+  public record SimulationStatus(boolean running) {}
 }

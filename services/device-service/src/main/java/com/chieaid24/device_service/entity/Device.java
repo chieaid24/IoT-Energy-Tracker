@@ -1,7 +1,6 @@
 package com.chieaid24.device_service.entity;
 
 import com.chieaid24.device_service.model.DeviceType;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,19 +20,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @Data
-
 public class Device {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String name;
+  private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type")
-    private DeviceType type;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type")
+  private DeviceType type;
 
-    private String location;
-    private Long userId;
-
+  private String location;
+  private Long userId;
 }

@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class RestExceptionHandler {
 
-    @ExceptionHandler(DeviceNotFoundException.class)
-    public ResponseEntity<String> handleNotFound(DeviceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
+  @ExceptionHandler(DeviceNotFoundException.class)
+  public ResponseEntity<String> handleNotFound(DeviceNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+  }
 }

@@ -8,21 +8,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class UserClient {
-    private final RestTemplate restTemplate;
-    private final String baseUrl;
+  private final RestTemplate restTemplate;
+  private final String baseUrl;
 
-    public UserClient(@Value("${user.service.url}") String baseUrl) {
-        this.restTemplate = new RestTemplate();
-        this.baseUrl = baseUrl;
-    }
+  public UserClient(@Value("${user.service.url}") String baseUrl) {
+    this.restTemplate = new RestTemplate();
+    this.baseUrl = baseUrl;
+  }
 
-    public Integer getUserCount() {
-        String url = UriComponentsBuilder
-            .fromUriString(baseUrl)
-            .path("/total")
-            .toUriString();
-        
-        ResponseEntity<Integer> response = restTemplate.getForEntity(url, Integer.class);
-        return response.getBody();
-    }
+  public Integer getUserCount() {
+    String url = UriComponentsBuilder.fromUriString(baseUrl).path("/total").toUriString();
+
+    ResponseEntity<Integer> response = restTemplate.getForEntity(url, Integer.class);
+    return response.getBody();
+  }
 }

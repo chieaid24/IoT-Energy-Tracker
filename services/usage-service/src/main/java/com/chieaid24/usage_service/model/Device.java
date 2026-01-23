@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Device {
-    Long id;
-    String name; 
-    String type; 
-    String location; 
-    Long userId;
-    Double energyConsumed;
+  Long id;
+  String name;
+  String type;
+  String location;
+  Long userId;
+  Double energyConsumed;
 }

@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AlertingEvent{
-    private Long userId;
-    private String message;
-    private double threshold;
-    private double energyConsumed;
-    private String email;
+public class AlertingEvent {
+  private Long userId;
+  private String message;
+  private double threshold;
+  private double energyConsumed;
+  private String email;
 }
