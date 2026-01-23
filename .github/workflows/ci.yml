@@ -51,7 +51,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
         # Build the FRONTEND container and push the image to ECR
-        SERVICE_NAME=$(basename ${{ matrix.service }})
+        SERVICE_NAME=${{ vars.NAMESPACE }}/$(basename ${{ matrix.service }})
         IMAGE_URI=$ECR_REGISTRY/$SERVICE_NAME
         IMAGE_TAG=latest
         
@@ -60,4 +60,5 @@ jobs:
         docker push $IMAGE_URI:$IMAGE_TAG
         # echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         echo "image=$IMAGE_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
 
