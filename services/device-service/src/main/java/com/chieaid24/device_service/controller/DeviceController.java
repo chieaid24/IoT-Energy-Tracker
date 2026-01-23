@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /*
-    TODO: Add getAllDevices endpoint with pagination and filtering by userId and deviceTypea
+    TODO: Add getAllDevices endpoint with pagination and filtering by userId and deviceType
 */
 
 @RestController

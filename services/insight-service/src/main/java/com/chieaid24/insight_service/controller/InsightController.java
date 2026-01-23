@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/insight")
 public class InsightController {
-  // init vars
+  // init var
   private final InsightService insightService;
 
   private InsightController(InsightService insightService) {
