@@ -97,6 +97,7 @@ Each service exposes Spring Actuator health at:
 - `docker/` contains init scripts and Kafka data volume mapping.
 - `docker-compose.yml` defines the full local stack.
 
-## Future Extensions
-- Containerize and deploy the microservices to Kubernetes with HPA autoscaling, ingress, and centralized observability (maybe Prometheus/Grafana + logs/traces).
+## Extensions (in progress)
+- Containerize and deploy the microservices to Kubernetes with HPA autoscaling, ingress, and centralized observability (maybe Prometheus/Grafana + logs).
+- Add Next.js frontend to start/stop simulation, and run within the cluster
 - Migrate cluster to AWS EKS with IAM, ALB/NLB ingress, and use more cloud-native, decoupled services (ex. convert `alerting-service` to a Lambda function, MSK instead of Kafka, etc)
