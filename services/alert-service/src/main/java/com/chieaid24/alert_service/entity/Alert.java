@@ -12,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 // alert entity to store alerts sent to users
-// another change
+// change
 
 @Data
 @NoArgsConstructor
