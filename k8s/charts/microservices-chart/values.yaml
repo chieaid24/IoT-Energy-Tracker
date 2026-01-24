@@ -27,8 +27,21 @@ userService:
       cpu: "500m"
 
 # Future services can be added here:
-# deviceService:
-#   enabled: false
+deviceService:
+  enabled: true
+  image:
+    repository: public.ecr.aws/v6r1m8q2/energy-tracker/device-service
+    tag: latest
+    pullPolicy: Always
+  port: 8081
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 #
 # ingestionService:
 #   enabled: false

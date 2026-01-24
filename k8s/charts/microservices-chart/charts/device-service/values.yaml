@@ -1,9 +1,9 @@
 image:
-  repository: public.ecr.aws/v6r1m8q2/energy-tracker/user-service
+  repository: public.ecr.aws/v6r1m8q2/energy-tracker/device-service
   tag: latest
   pullPolicy: Always
 
-port: 8080
+port: 8081
 replicas: 1
 
 resources:

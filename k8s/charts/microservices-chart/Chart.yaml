@@ -9,3 +9,6 @@ dependencies:
   - name: user-service
     version: "0.1.0"
     condition: userService.enabled
+  - name: device-service
+    version: "0.1.0"
+    condition: deviceService.enabled
