@@ -1,0 +1,25 @@
+image:
+  repository: mysql
+  tag: "8.3.0"
+  pullPolicy: IfNotPresent
+
+auth:
+  rootPassword: password
+  database: energy_tracker
+
+persistence:
+  enabled: false
+  size: 10Gi
+
+service:
+  type: ClusterIP
+  port: 3306
+  # nodePort: 30306  # Uncomment and set type to NodePort to expose externally
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

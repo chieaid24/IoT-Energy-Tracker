@@ -1,0 +1,39 @@
+global:
+  namespace: default
+
+# MySQL Configuration
+# These values are passed to the mysql subchart
+mysql:
+  enabled: true
+  image:
+    repository: mysql
+    tag: "8.3.0"
+    pullPolicy: IfNotPresent
+
+  auth:
+    rootPassword: password
+    database: energy_tracker
+
+  persistence:
+    enabled: false
+    size: 10Gi
+
+  service:
+    type: NodePort  # Changed from ClusterIP to expose outside cluster
+    port: 3306
+    nodePort: 30306  # External port to access MySQL
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Future infrastructure components can be added here:
+# kafka:
+#   enabled: false
+#
+# influxdb:
+#   enabled: false

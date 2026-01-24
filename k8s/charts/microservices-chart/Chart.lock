@@ -1,0 +1,6 @@
+dependencies:
+- name: user-service
+  repository: ""
+  version: 0.1.0
+digest: sha256:8a575d25af631b89c459bec1cbbe66f661560b4c4c8b1d83cf2da944fbe82a92
+generated: "2026-01-24T01:00:20.56353431-05:00"

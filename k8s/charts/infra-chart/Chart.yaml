@@ -1,0 +1,11 @@
+apiVersion: v2
+name: infra-chart
+description: Energy Tracker Infrastructure Components
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: mysql
+    version: "0.1.0"
+    condition: mysql.enabled
