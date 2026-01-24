@@ -139,7 +139,7 @@ services:
 
   user-service:
     build:
-      context: ./user-service
+      context: ./services/user-service
     ports:
       - "8080:8080"
     environment:
@@ -152,7 +152,7 @@ services:
 
   device-service:
     build:
-      context: ./device-service
+      context: ./services/device-service
     ports:
       - "8081:8081"
     environment:
@@ -166,7 +166,7 @@ services:
 
   ingestion-service:
     build:
-      context: ./ingestion-service
+      context: ./services/ingestion-service
     ports:
       - "8082:8082"
     environment:
@@ -178,7 +178,7 @@ services:
 
   usage-service:
     build:
-      context: ./usage-service
+      context: ./services/usage-service
     ports:
       - "8083:8083"
     environment:
@@ -197,7 +197,7 @@ services:
 
   alert-service:
     build:
-      context: ./alert-service
+      context: ./services/alert-service
     ports:
       - "8084:8084"
     environment:
@@ -217,7 +217,7 @@ services:
 
   insight-service:
     build:
-      context: ./insight-service
+      context: ./services/insight-service
     ports:
       - "8085:8085"
     environment:
