@@ -99,5 +99,6 @@ Each service exposes Spring Actuator health at:
 
 ## Extensions (in progress)
 - Containerize and deploy the microservices to Kubernetes with HPA autoscaling, ingress, and centralized observability (maybe Prometheus/Grafana + logs).
-- Add Next.js frontend to start/stop simulation, and run within the cluster
+- Add Next.js frontend to start/stop simulation, and run within the cluster.
+- Redis caching layer, CDN for static content, and queue for AI inference requests.
 - Migrate cluster to AWS EKS with IAM, ALB/NLB ingress, and use more cloud-native, decoupled services (ex. convert `alerting-service` to a Lambda function, MSK instead of Kafka, etc)
