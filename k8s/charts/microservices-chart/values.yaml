@@ -1,7 +1,7 @@
 global:
   namespace: default
 
-  # MySQL connection details
+  # MySQL connection details test
   mysql:
     host: infra-mysql  # ie the name of the release must be "infra"
     port: 3306
