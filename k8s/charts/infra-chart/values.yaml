@@ -31,9 +31,85 @@ mysql:
       memory: "512Mi"
       cpu: "500m"
 
-# Future infrastructure components can be added here:
-# kafka:
-#   enabled: false
-#
-# influxdb:
-#   enabled: false
+kafka:
+  enabled: true
+  image:
+    repository: apache/kafka
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  nodeId: 1
+  clusterId: "energy-tracker-cluster-1"
+  persistence:
+    enabled: false
+  service:
+    type: ClusterIP
+    port: 9092
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+influxdb:
+  enabled: true
+  image:
+    repository: influxdb
+    tag: "2.7"
+    pullPolicy: IfNotPresent
+  auth:
+    username: admin
+    password: admin123
+    org: chieaid24
+    bucket: usage-bucket
+    retention: 1w
+    adminToken: my-token
+  persistence:
+    enabled: false
+    size: 10Gi
+  service:
+    type: ClusterIP
+    port: 8086
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+mailpit:
+  enabled: true
+  image:
+    repository: axllent/mailpit
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    smtpPort: 1025
+    webPort: 8025
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+kafkaUi:
+  enabled: true
+  image:
+    repository: ghcr.io/kafbat/kafka-ui
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"

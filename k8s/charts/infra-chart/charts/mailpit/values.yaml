@@ -1,0 +1,17 @@
+image:
+  repository: axllent/mailpit
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  smtpPort: 1025
+  webPort: 8025
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "100m"

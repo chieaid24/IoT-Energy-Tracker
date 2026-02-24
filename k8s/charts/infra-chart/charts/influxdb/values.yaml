@@ -1,0 +1,29 @@
+image:
+  repository: influxdb
+  tag: "2.7"
+  pullPolicy: IfNotPresent
+
+# Matches docker-compose.yml InfluxDB init configuration
+auth:
+  username: admin
+  password: admin123
+  org: chieaid24
+  bucket: usage-bucket
+  retention: 1w
+  adminToken: my-token
+
+persistence:
+  enabled: false
+  size: 10Gi
+
+service:
+  type: ClusterIP
+  port: 8086
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

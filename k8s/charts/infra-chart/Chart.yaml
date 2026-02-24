@@ -9,3 +9,16 @@ dependencies:
   - name: mysql
     version: "0.1.0"
     condition: mysql.enabled
+  - name: kafka
+    version: "0.1.0"
+    condition: kafka.enabled
+  - name: influxdb
+    version: "0.1.0"
+    condition: influxdb.enabled
+  - name: mailpit
+    version: "0.1.0"
+    condition: mailpit.enabled
+  - name: kafka-ui
+    version: "0.1.0"
+    condition: kafkaUi.enabled
+    alias: kafkaUi
