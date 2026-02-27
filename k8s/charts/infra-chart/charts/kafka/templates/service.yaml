@@ -1,0 +1,32 @@
+# Headless service (required for StatefulSet pod DNS)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kafka-headless
+spec:
+  clusterIP: None
+  ports:
+  - port: 9092
+    name: plaintext
+    targetPort: 9092
+  - port: 9093
+    name: controller
+    targetPort: 9093
+  selector:
+    app: kafka
+
+---
+# Regular service (for microservice connections)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kafka
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: 9092
+    protocol: TCP
+    name: plaintext
+  selector:
+    app: kafka

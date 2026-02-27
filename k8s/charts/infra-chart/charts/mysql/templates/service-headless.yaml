@@ -1,0 +1,29 @@
+# Headless service (required for StatefulSet DNS)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql-headless
+spec:
+  clusterIP: None
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: 3306
+  selector:
+    app: mysql
+
+---
+# Regular service (for connecting)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: 3306
+    {{- if .Values.service.nodePort }}
+    nodePort: {{ .Values.service.nodePort }}
+    {{- end }}
+  selector:
+    app: mysql

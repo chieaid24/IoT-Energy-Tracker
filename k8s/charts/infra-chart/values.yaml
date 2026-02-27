@@ -1,0 +1,115 @@
+global:
+  namespace: default
+
+# MySQL Configuration
+# These values are passed to the mysql subchart
+mysql:
+  enabled: true
+  image:
+    repository: mysql
+    tag: "8.3.0"
+    pullPolicy: IfNotPresent
+
+  auth:
+    rootPassword: password
+    database: energy_tracker
+
+  persistence:
+    enabled: false
+    size: 10Gi
+
+  service:
+    type: NodePort  # Changed from ClusterIP to expose outside cluster
+    port: 3306
+    nodePort: 30306  # External port to access MySQL
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+kafka:
+  enabled: true
+  image:
+    repository: apache/kafka
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  nodeId: 1
+  clusterId: "energy-tracker-cluster-1"
+  persistence:
+    enabled: false
+  service:
+    type: ClusterIP
+    port: 9092
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+influxdb:
+  enabled: true
+  image:
+    repository: influxdb
+    tag: "2.7"
+    pullPolicy: IfNotPresent
+  auth:
+    username: admin
+    password: admin123
+    org: chieaid24
+    bucket: usage-bucket
+    retention: 1w
+    adminToken: my-token
+  persistence:
+    enabled: false
+    size: 10Gi
+  service:
+    type: ClusterIP
+    port: 8086
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+mailpit:
+  enabled: true
+  image:
+    repository: axllent/mailpit
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    smtpPort: 1025
+    webPort: 8025
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+kafkaUi:
+  enabled: true
+  image:
+    repository: ghcr.io/kafbat/kafka-ui
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"

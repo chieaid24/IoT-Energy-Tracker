@@ -1,0 +1,17 @@
+apiVersion: v2
+name: microservice-chart
+description: Energy Tracker Microservices
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: user-service
+    version: "0.1.0"
+    condition: userService.enabled
+  - name: device-service
+    version: "0.1.0"
+    condition: deviceService.enabled
+  - name: ingestion-service
+    version: "0.1.0"
+    condition: ingestionService.enabled

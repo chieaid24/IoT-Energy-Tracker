@@ -68,7 +68,7 @@ public class UserService {
               .email("dummy" + i + "@example.com")
               .address("Dummy Address " + i)
               .alerting(i % 2 == 0)
-              .energyAlertingThreshold(1000.0 + (i * 10))
+              .energyAlertingThreshold(10.0 + (i * 10)) // test values for now
               .build();
       userRepository.save(dummyUser);
     }
