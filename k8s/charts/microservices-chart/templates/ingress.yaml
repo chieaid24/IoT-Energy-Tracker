@@ -1,0 +1,68 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      {{- if .Values.userService.enabled }}
+      - path: /api/v1/user(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-user-service
+            port:
+              number: {{ .Values.userService.port }}
+      {{- end }}
+      {{- if .Values.deviceService.enabled }}
+      - path: /api/v1/device(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-device-service
+            port:
+              number: {{ .Values.deviceService.port }}
+      {{- end }}
+      {{- if .Values.ingestionService.enabled }}
+      - path: /api/v1/ingestion(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-ingestion-service
+            port:
+              number: {{ .Values.ingestionService.port }}
+      {{- end }}
+      {{- if .Values.usageService.enabled }}
+      - path: /api/v1/usage(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-usage-service
+            port:
+              number: {{ .Values.usageService.port }}
+      {{- end }}
+      {{- if .Values.alertService.enabled }}
+      - path: /api/v1/alert(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-alert-service
+            port:
+              number: {{ .Values.alertService.port }}
+      {{- end }}
+      {{- if .Values.insightService.enabled }}
+      - path: /api/v1/insight(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ .Release.Name }}-insight-service
+            port:
+              number: {{ .Values.insightService.port }}
+      {{- end }}
+{{- end }}

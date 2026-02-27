@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ingestion-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: ingestion-service
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: ingestion-service
+  template:
+    metadata:
+      labels:
+        app: ingestion-service
+    spec:
+      initContainers:
+      - name: wait-for-kafka
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for Kafka at infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local:9092"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nc -z infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local 9092; then
+              echo "Kafka is ready!"
+              exit 0
+            fi
+            echo "Kafka not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for Kafka after ${TIMEOUT} seconds"
+          exit 1
+      - name: wait-for-device-service
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for device-service at {{ .Release.Name }}-device-service.{{ .Values.global.namespace }}.svc.cluster.local:8081"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if wget -q --spider http://{{ .Release.Name }}-device-service.{{ .Values.global.namespace }}.svc.cluster.local:8081/actuator/health; then
+              echo "device-service is ready!"
+              exit 0
+            fi
+            echo "device-service not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for device-service after ${TIMEOUT} seconds"
+          exit 1
+      containers:
+      - name: ingestion-service
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: http
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-global-config
+        env:
+        - name: SERVER_PORT
+          value: "{{ .Values.port }}"
+        - name: SIMULATION_PARALLEL_THREADS
+          value: "{{ .Values.simulation.parallelThreads }}"
+        - name: SIMULATION_REQUESTS_PER_INTERVAL
+          value: "{{ .Values.simulation.requestsPerInterval }}"
+        - name: SIMULATION_INTERVAL_MS
+          value: "{{ .Values.simulation.intervalMs }}"
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3

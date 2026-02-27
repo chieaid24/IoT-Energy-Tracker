@@ -1,0 +1,21 @@
+image:
+  repository: public.ecr.aws/v6r1m8q2/energy-tracker/ingestion-service
+  tag: latest
+  pullPolicy: Always
+
+port: 8082
+replicas: 1
+
+# Simulator configuration (replaces application.properties values)
+simulation:
+  parallelThreads: 10
+  requestsPerInterval: 100
+  intervalMs: 5000
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

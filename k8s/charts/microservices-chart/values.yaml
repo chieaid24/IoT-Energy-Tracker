@@ -1,3 +1,6 @@
+ingress:
+  enabled: false
+
 global:
   namespace: default
 
@@ -42,6 +45,31 @@ deviceService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-#
-# ingestionService:
-#   enabled: false
+ingestionService:
+  enabled: true
+  image:
+    repository: public.ecr.aws/v6r1m8q2/energy-tracker/ingestion-service
+    tag: latest
+    pullPolicy: Always
+  port: 8082
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Disabled until deployed — port stubs needed for ingress template
+usageService:
+  enabled: false
+  port: 8083
+
+alertService:
+  enabled: false
+  port: 8084
+
+insightService:
+  enabled: false
+  port: 8085

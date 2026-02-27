@@ -12,3 +12,6 @@ dependencies:
   - name: device-service
     version: "0.1.0"
     condition: deviceService.enabled
+  - name: ingestion-service
+    version: "0.1.0"
+    condition: ingestionService.enabled
