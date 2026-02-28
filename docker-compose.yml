@@ -134,7 +134,7 @@ services:
             fi;
             sleep 1;
           done;
-          ollama pull deepseek-r1;
+          ollama pull gemma3:4b;
           wait
 
   user-service:
@@ -223,6 +223,7 @@ services:
     environment:
       USAGE_SERVICE_URL: http://usage-service:8083/api/v1/usage
       SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: gemma3:4b
     depends_on:
       - usage-service
       - ollama

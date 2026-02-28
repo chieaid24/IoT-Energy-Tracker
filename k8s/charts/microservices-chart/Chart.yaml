@@ -18,3 +18,6 @@ dependencies:
   - name: alert-service
     version: "0.1.0"
     condition: alertService.enabled
+  - name: usage-service
+    version: "0.1.0"
+    condition: usageService.enabled

@@ -19,7 +19,13 @@ data:
   SPRING_MAIL_HOST: "infra-mailpit.{{ .Values.global.namespace }}.svc.cluster.local"
   SPRING_MAIL_PORT: "1025"
 
+  # InfluxDB
+  INFLUX_URL: "http://infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local:8086"
+  INFLUX_ORG: "chieaid24"
+  INFLUX_BUCKET: "usage-bucket"
+
   # Service URLs
   USER_SERVICE_URL: "http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080/api/v1/user"
   DEVICE_SERVICE_URL: "http://{{ .Release.Name }}-device-service.{{ .Values.global.namespace }}.svc.cluster.local:8081/api/v1/device"
   INGESTION_ENDPOINT: "http://{{ .Release.Name }}-ingestion-service.{{ .Values.global.namespace }}.svc.cluster.local:8082/api/v1/ingestion"
+  USAGE_SERVICE_URL: "http://{{ .Release.Name }}-usage-service.{{ .Values.global.namespace }}.svc.cluster.local:8083/api/v1/usage"

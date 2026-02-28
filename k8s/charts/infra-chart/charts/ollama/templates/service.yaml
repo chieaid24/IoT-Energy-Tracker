@@ -1,0 +1,28 @@
+# Headless service (required for StatefulSet DNS)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-ollama-headless
+spec:
+  clusterIP: None
+  ports:
+  - port: {{ .Values.port }}
+    targetPort: {{ .Values.port }}
+  selector:
+    app: ollama
+
+---
+# Regular service (for insight-service connections)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-ollama
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.port }}
+    targetPort: {{ .Values.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: ollama

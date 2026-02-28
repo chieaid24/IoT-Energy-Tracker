@@ -11,5 +11,8 @@ dependencies:
 - name: alert-service
   repository: ""
   version: 0.1.0
-digest: sha256:a685410c226eed2eca6bd3f8c0be96884b30a60412417ae520f672cd8b36cbe7
-generated: "2026-02-26T21:31:20.040133673-05:00"
+- name: usage-service
+  repository: ""
+  version: 0.1.0
+digest: sha256:1872fd65a16df32585f804996cde604607054215c6bb15ff24383e2b29cec592
+generated: "2026-02-27T21:41:54.612366909-05:00"

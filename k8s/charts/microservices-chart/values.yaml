@@ -12,6 +12,9 @@ global:
     username: root
     password: password
 
+  influx:
+    token: my-token
+
 # User Service Configuration
 userService:
   enabled: true
@@ -61,10 +64,21 @@ ingestionService:
       memory: "512Mi"
       cpu: "500m"
 
-# Disabled until deployed — port stubs needed for ingress template
 usageService:
-  enabled: false
+  enabled: true
+  image:
+    repository: public.ecr.aws/v6r1m8q2/energy-tracker/usage-service
+    tag: latest
+    pullPolicy: Always
   port: 8083
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
 alertService:
   enabled: true

@@ -112,3 +112,22 @@ kafkaUi:
     limits:
       memory: "512Mi"
       cpu: "250m"
+
+ollama:
+  enabled: true
+  image:
+    repository: ollama/ollama
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  model: gemma3:4b
+  port: 11434
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "6Gi"
+      cpu: "2000m"

@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-ollama
+spec:
+  serviceName: {{ .Release.Name }}-ollama-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          ollama serve &
+          until ollama list >/dev/null 2>&1; do
+            sleep 1;
+          done;
+          echo "Ollama ready, pulling model {{ .Values.model }}..."
+          ollama pull {{ .Values.model }};
+          echo "Model pull complete. Waiting..."
+          wait
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: http
+
+        volumeMounts:
+        - name: data
+          mountPath: /root/.ollama
+
+        # Fires during startup. Generous threshold covers the model download (~2.5 GB).
+        # failureThreshold * periodSeconds = 60 * 10s = 10 min max startup time.
+        startupProbe:
+          httpGet:
+            path: /api/tags
+            port: {{ .Values.port }}
+          failureThreshold: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /api/tags
+            port: {{ .Values.port }}
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        livenessProbe:
+          httpGet:
+            path: /api/tags
+            port: {{ .Values.port }}
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+
+      volumes:
+      {{- if not .Values.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+  {{- end }}

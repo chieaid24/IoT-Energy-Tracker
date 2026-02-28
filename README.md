@@ -10,13 +10,13 @@
 | --- | --- |
 | Language / Frameworks | Java 21 (Maven), Spring Boot, Spring Actuator |
 | Database | MySQL, InfluxDB, Flyway |
-| Microservices | Kafka, Ollama (deepseek-r1) |
+| Microservices | Kafka, Ollama (gemma3:4b) |
 | Dev Tools | Docker, Docker Compose, Mailpit |
 
 ## Technical Highlights
 - Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting.
 - Dual persistence model: **MySQL** for relational data and **InfluxDB** for time-series usage analytics.
-- AI-powered insights service that integrates **Ollama** (deepseek-r1) for actionable recommendations.
+- AI-powered insights service that integrates **Ollama** (gemma3:4b) for actionable recommendations.
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
 - **Health-aware services** via Spring Actuator endpoints for production-ready checks.
 
