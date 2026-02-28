@@ -15,3 +15,6 @@ dependencies:
   - name: ingestion-service
     version: "0.1.0"
     condition: ingestionService.enabled
+  - name: alert-service
+    version: "0.1.0"
+    condition: alertService.enabled

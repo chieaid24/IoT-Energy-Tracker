@@ -1,5 +1,5 @@
 ingress:
-  enabled: false
+  enabled: true
 
 global:
   namespace: default
@@ -7,7 +7,7 @@ global:
   # MySQL connection details test
   mysql:
     host: infra-mysql  # ie the name of the release must be "infra"
-    port: 3306
+    port: 3307
     database: energy_tracker
     username: root
     password: password
@@ -67,8 +67,20 @@ usageService:
   port: 8083
 
 alertService:
-  enabled: false
+  enabled: true
+  image:
+    repository: public.ecr.aws/v6r1m8q2/energy-tracker/alert-service
+    tag: latest
+    pullPolicy: Always
   port: 8084
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
 insightService:
   enabled: false

@@ -20,8 +20,8 @@ The project is partially migrated to Helm/Minikube. MySQL, user-service, and dev
 | InfluxDB | ✅ infra-chart subchart |
 | Mailpit | ✅ infra-chart subchart |
 | Kafka UI | ✅ infra-chart subchart |
-| ingestion-service | ❌ Phase 2 |
-| alert-service | ❌ Phase 3 |
+| ingestion-service | ✅ microservices-chart subchart |
+| alert-service | ✅ microservices-chart subchart |
 | usage-service | ❌ Phase 4 |
 | Ollama | ❌ Phase 5 |
 | insight-service | ❌ Phase 6 |

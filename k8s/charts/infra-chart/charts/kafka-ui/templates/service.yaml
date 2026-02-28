@@ -9,5 +9,8 @@ spec:
     targetPort: 8080
     protocol: TCP
     name: web
+    {{- if .Values.service.nodePort }}
+    nodePort: {{ .Values.service.nodePort }}
+    {{- end }}
   selector:
     app: kafka-ui

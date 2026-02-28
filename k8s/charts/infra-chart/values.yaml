@@ -19,9 +19,8 @@ mysql:
     size: 10Gi
 
   service:
-    type: NodePort  # Changed from ClusterIP to expose outside cluster
-    port: 3306
-    nodePort: 30306  # External port to access MySQL
+    type: LoadBalancer
+    port: 3307
 
   resources:
     requests:
@@ -69,7 +68,7 @@ influxdb:
     enabled: false
     size: 10Gi
   service:
-    type: ClusterIP
+    type: LoadBalancer
     port: 8086
   resources:
     requests:
@@ -86,7 +85,7 @@ mailpit:
     tag: "latest"
     pullPolicy: IfNotPresent
   service:
-    type: ClusterIP
+    type: LoadBalancer
     smtpPort: 1025
     webPort: 8025
   resources:
@@ -104,7 +103,7 @@ kafkaUi:
     tag: "latest"
     pullPolicy: IfNotPresent
   service:
-    type: ClusterIP
+    type: LoadBalancer
     port: 8080
   resources:
     requests:

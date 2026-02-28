@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-alert-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: alert-service
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for MySQL at {{ .Values.global.mysql.host }}.{{ .Values.global.namespace }}.svc.cluster.local:{{ .Values.global.mysql.port }}"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nc -z {{ .Values.global.mysql.host }}.{{ .Values.global.namespace }}.svc.cluster.local {{ .Values.global.mysql.port }}; then
+              echo "MySQL is ready!"
+              exit 0
+            fi
+            echo "MySQL not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for MySQL after ${TIMEOUT} seconds"
+          exit 1
+      - name: wait-for-kafka
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for Kafka at infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local:9092"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nc -z infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local 9092; then
+              echo "Kafka is ready!"
+              exit 0
+            fi
+            echo "Kafka not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for Kafka after ${TIMEOUT} seconds"
+          exit 1
+      - name: wait-for-mailpit
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for Mailpit at infra-mailpit.{{ .Values.global.namespace }}.svc.cluster.local:1025"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if nc -z infra-mailpit.{{ .Values.global.namespace }}.svc.cluster.local 1025; then
+              echo "Mailpit is ready!"
+              exit 0
+            fi
+            echo "Mailpit not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for Mailpit after ${TIMEOUT} seconds"
+          exit 1
+      containers:
+      - name: alert-service
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: http
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-global-config
+        env:
+        - name: SERVER_PORT
+          value: "{{ .Values.port }}"
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-global-secret
+              key: SPRING_DATASOURCE_PASSWORD
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3

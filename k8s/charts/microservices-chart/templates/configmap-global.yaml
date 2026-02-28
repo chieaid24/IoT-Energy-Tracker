@@ -12,6 +12,12 @@ data:
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local:9092"
   SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.springframework.kafka.support.serializer.JsonSerializer"
   SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+  SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.springframework.kafka.support.serializer.JsonDeserializer"
+  SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
+
+  # Mail (Mailpit)
+  SPRING_MAIL_HOST: "infra-mailpit.{{ .Values.global.namespace }}.svc.cluster.local"
+  SPRING_MAIL_PORT: "1025"
 
   # Service URLs
   USER_SERVICE_URL: "http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080/api/v1/user"
