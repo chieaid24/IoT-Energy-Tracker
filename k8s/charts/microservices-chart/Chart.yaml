@@ -21,3 +21,6 @@ dependencies:
   - name: usage-service
     version: "0.1.0"
     condition: usageService.enabled
+  - name: insight-service
+    version: "0.1.0"
+    condition: insightService.enabled

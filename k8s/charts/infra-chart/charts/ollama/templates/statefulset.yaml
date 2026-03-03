@@ -17,6 +17,9 @@ spec:
       - name: ollama
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: OLLAMA_KEEP_ALIVE
+          value: "-1"
         command:
         - /bin/sh
         - -c
@@ -27,7 +30,9 @@ spec:
           done;
           echo "Ollama ready, pulling model {{ .Values.model }}..."
           ollama pull {{ .Values.model }};
-          echo "Model pull complete. Waiting..."
+          echo "Warming up model {{ .Values.model }}..."
+          ollama run {{ .Values.model }} "hello" > /dev/null 2>&1 || true
+          echo "Warmup complete. Waiting..."
           wait
         ports:
         - containerPort: {{ .Values.port }}
@@ -70,6 +75,7 @@ spec:
           limits:
             memory: {{ .Values.resources.limits.memory }}
             cpu: {{ .Values.resources.limits.cpu }}
+            nvidia.com/gpu: 1
 
       volumes:
       {{- if not .Values.persistence.enabled }}

@@ -24,7 +24,7 @@ The project is partially migrated to Helm/Minikube. MySQL, user-service, and dev
 | alert-service | ✅ microservices-chart subchart |
 | usage-service | ✅ microservices-chart subchart |
 | Ollama | ✅ infra-chart subchart |
-| insight-service | ❌ Phase 6 |
+| insight-service | ✅ microservices-chart subchart |
 
 ---
 

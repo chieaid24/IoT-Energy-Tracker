@@ -3,7 +3,7 @@ image:
   tag: "latest"
   pullPolicy: IfNotPresent
 
-model: gemma3:4b
+model: qwen2.5:0.5b
 port: 11434
 
 persistence:
