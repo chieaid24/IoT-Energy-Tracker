@@ -2,5 +2,20 @@ dependencies:
 - name: user-service
   repository: ""
   version: 0.1.0
-digest: sha256:8a575d25af631b89c459bec1cbbe66f661560b4c4c8b1d83cf2da944fbe82a92
-generated: "2026-01-24T01:00:20.56353431-05:00"
+- name: device-service
+  repository: ""
+  version: 0.1.0
+- name: ingestion-service
+  repository: ""
+  version: 0.1.0
+- name: alert-service
+  repository: ""
+  version: 0.1.0
+- name: usage-service
+  repository: ""
+  version: 0.1.0
+- name: insight-service
+  repository: ""
+  version: 0.1.0
+digest: sha256:1872fd65a16df32585f804996cde604607054215c6bb15ff24383e2b29cec592
+generated: "2026-02-27T21:41:54.612366909-05:00"

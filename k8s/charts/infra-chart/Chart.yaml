@@ -22,3 +22,6 @@ dependencies:
     version: "0.1.0"
     condition: kafkaUi.enabled
     alias: kafkaUi
+  - name: ollama
+    version: "0.1.0"
+    condition: ollama.enabled

@@ -117,6 +117,8 @@ services:
     container_name: ollama
     ports:
       - "11434:11434"
+    environment:
+      OLLAMA_KEEP_ALIVE: -1
     volumes:
       - ollama-data:/root/.ollama
     entrypoint: []
@@ -134,7 +136,10 @@ services:
             fi;
             sleep 1;
           done;
-          ollama pull deepseek-r1;
+          ollama pull qwen2.5:0.5b;
+          echo "Warming up model qwen2.5:0.5b...";
+          ollama run qwen2.5:0.5b "hello" > /dev/null 2>&1 || true;
+          echo "Warmup complete.";
           wait
 
   user-service:
@@ -156,6 +161,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
@@ -170,9 +176,15 @@ services:
     ports:
       - "8082:8082"
     environment:
+      SERVER_PORT: 8082
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
       INGESTION_ENDPOINT: http://ingestion-service:8082/api/v1/ingestion
       DEVICE_SERVICE_URL: http://device-service:8081/api/v1/device
+      SIMULATION_PARALLEL_THREADS: 10
+      SIMULATION_REQUESTS_PER_INTERVAL: 100
+      SIMULATION_INTERVAL_MS: 5000
     depends_on:
       - kafka
 
@@ -182,7 +194,12 @@ services:
     ports:
       - "8083:8083"
     environment:
+      SERVER_PORT: 8083
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
+      SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: org.apache.kafka.common.serialization.StringSerializer
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
       INFLUX_URL: http://influxdb:8086
       INFLUX_TOKEN: my-token
       INFLUX_ORG: chieaid24
@@ -201,7 +218,10 @@ services:
     ports:
       - "8084:8084"
     environment:
+      SERVER_PORT: 8084
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
@@ -221,8 +241,10 @@ services:
     ports:
       - "8085:8085"
     environment:
+      SERVER_PORT: 8085
       USAGE_SERVICE_URL: http://usage-service:8083/api/v1/usage
       SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: qwen2.5:0.5b
     depends_on:
       - usage-service
       - ollama

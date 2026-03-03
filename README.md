@@ -10,13 +10,13 @@
 | --- | --- |
 | Language / Frameworks | Java 21 (Maven), Spring Boot, Spring Actuator |
 | Database | MySQL, InfluxDB, Flyway |
-| Microservices | Kafka, Ollama (deepseek-r1) |
+| Microservices | Kafka, Ollama (qwen2.5:0.5b) |
 | Dev Tools | Docker, Docker Compose, Mailpit |
 
 ## Technical Highlights
 - Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting.
 - Dual persistence model: **MySQL** for relational data and **InfluxDB** for time-series usage analytics.
-- AI-powered insights service that integrates **Ollama** (deepseek-r1) for actionable recommendations.
+- AI-powered insights service that integrates **Ollama** (qwen2.5:0.5b) for actionable recommendations.
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
 - **Health-aware services** via Spring Actuator endpoints for production-ready checks.
 
@@ -83,6 +83,90 @@ Stop the stack:
 docker compose down
 ```
 
+## Run With Kubernetes (Minikube)
+
+> Requires: [Minikube](https://minikube.sigs.k8s.io/docs/start/), [Helm](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/), and an NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed.
+
+### 1. Start Minikube
+
+```bash
+minikube start --gpus all --driver=docker --memory=8192 --cpus=6
+```
+
+### 2. Enable the Ingress Addon
+
+```bash
+minikube addons enable ingress
+```
+
+### 3. Install the Infrastructure Chart
+
+```bash
+helm install infra ./k8s/charts/infra-chart
+```
+
+This deploys: MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, and Ollama (with GPU acceleration).
+
+Watch until all pods are running:
+```bash
+kubectl get pods -w
+```
+
+Ollama will take several minutes on first start since it pulls and warms up the `qwen2.5:0.5b` model. Watch progress:
+```bash
+kubectl logs statefulset/infra-ollama -f
+```
+
+### 4. Install the Microservices Chart
+
+```bash
+helm install microservices ./k8s/charts/microservices-chart
+```
+
+This deploys: user-service, device-service, ingestion-service, usage-service, alert-service, and insight-service.
+
+Watch until all pods are running (or use `minikube dashboard`):
+```bash
+kubectl get pods -w
+```
+
+### 5. Start Minikube Tunnel
+
+In a separate terminal, run and keep open:
+```bash
+minikube tunnel
+```
+
+This exposes LoadBalancer services and the ingress to `localhost`.
+
+### Service URLs
+
+| Service | URL |
+|---|---|
+| Microservices API (via ingress) | `http://localhost/api/v1/...` |
+| Kafka UI | `http://localhost:8080` |
+| Mailpit (email UI) | `http://localhost:8025` |
+| InfluxDB UI | `http://localhost:8086` |
+| MySQL | `localhost:3307` (root / password) |
+
+### Upgrade & Restart
+
+After changing chart values:
+```bash
+helm upgrade infra ./k8s/charts/infra-chart
+helm upgrade microservices ./k8s/charts/microservices-chart
+```
+
+### Teardown
+
+```bash
+helm uninstall microservices
+helm uninstall infra
+minikube stop
+```
+
+---
+
 ## Health Checks
 Each service exposes Spring Actuator health at:
 - http://localhost:8080/actuator/health (user-service)
@@ -98,7 +182,6 @@ Each service exposes Spring Actuator health at:
 - `docker-compose.yml` defines the full local stack.
 
 ## Extensions (in progress)
-- Containerize and deploy the microservices to Kubernetes with HPA autoscaling, ingress, and centralized observability (maybe Prometheus/Grafana + logs).
 - Add Next.js frontend to start/stop simulation, and run within the cluster.
 - Redis caching layer, CDN for static content, and queue for AI inference requests.
 - Stronger AI guardrails to reduce hallucinations and improve validity

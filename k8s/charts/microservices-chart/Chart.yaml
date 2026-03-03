@@ -15,3 +15,12 @@ dependencies:
   - name: ingestion-service
     version: "0.1.0"
     condition: ingestionService.enabled
+  - name: alert-service
+    version: "0.1.0"
+    condition: alertService.enabled
+  - name: usage-service
+    version: "0.1.0"
+    condition: usageService.enabled
+  - name: insight-service
+    version: "0.1.0"
+    condition: insightService.enabled

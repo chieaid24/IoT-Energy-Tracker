@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-insight-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: insight-service
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: insight-service
+  template:
+    metadata:
+      labels:
+        app: insight-service
+    spec:
+      initContainers:
+      - name: wait-for-ollama
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for Ollama at infra-ollama.{{ .Values.global.namespace }}.svc.cluster.local:11434"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if wget -q -O- http://infra-ollama.{{ .Values.global.namespace }}.svc.cluster.local:11434/api/tags >/dev/null 2>&1; then
+              echo "Ollama is ready!"
+              exit 0
+            fi
+            echo "Ollama not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for Ollama after ${TIMEOUT} seconds"
+          exit 1
+      - name: wait-for-usage-service
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for usage-service at {{ .Release.Name }}-usage-service.{{ .Values.global.namespace }}.svc.cluster.local:8083"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if wget -q -O- http://{{ .Release.Name }}-usage-service.{{ .Values.global.namespace }}.svc.cluster.local:8083/actuator/health >/dev/null 2>&1; then
+              echo "usage-service is ready!"
+              exit 0
+            fi
+            echo "usage-service not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for usage-service after ${TIMEOUT} seconds"
+          exit 1
+      containers:
+      - name: insight-service
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: http
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-global-config
+        env:
+        - name: SERVER_PORT
+          value: "{{ .Values.port }}"
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: {{ .Values.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3

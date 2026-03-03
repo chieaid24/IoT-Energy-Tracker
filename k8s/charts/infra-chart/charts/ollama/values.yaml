@@ -1,0 +1,19 @@
+image:
+  repository: ollama/ollama
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+model: qwen2.5:0.5b
+port: 11434
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "500m"
+  limits:
+    memory: "6Gi"
+    cpu: "2000m"

@@ -20,11 +20,11 @@ The project is partially migrated to Helm/Minikube. MySQL, user-service, and dev
 | InfluxDB | ✅ infra-chart subchart |
 | Mailpit | ✅ infra-chart subchart |
 | Kafka UI | ✅ infra-chart subchart |
-| ingestion-service | ❌ Phase 2 |
-| alert-service | ❌ Phase 3 |
-| usage-service | ❌ Phase 4 |
-| Ollama | ❌ Phase 5 |
-| insight-service | ❌ Phase 6 |
+| ingestion-service | ✅ microservices-chart subchart |
+| alert-service | ✅ microservices-chart subchart |
+| usage-service | ✅ microservices-chart subchart |
+| Ollama | ✅ infra-chart subchart |
+| insight-service | ✅ microservices-chart subchart |
 
 ---
 
@@ -117,19 +117,24 @@ kubectl logs deployment/microservices-alert-service
     2. `wait-for-influxdb` — `nc -z infra-influxdb.default.svc.cluster.local 8086`
     3. `wait-for-user-service` — `wget` on `microservices-user-service.default.svc.cluster.local:8080/actuator/health`
     4. `wait-for-device-service` — `wget` on `microservices-device-service.default.svc.cluster.local:8081/actuator/health`
-  - Env: `SPRING_KAFKA_BOOTSTRAP_SERVERS`, `INFLUX_URL`, `INFLUX_TOKEN` (from secret), `INFLUX_ORG`, `INFLUX_BUCKET`, `DEVICE_SERVICE_URL`, `USER_SERVICE_URL`
+  - `envFrom`: global configmap (provides `SPRING_KAFKA_BOOTSTRAP_SERVERS`, `DEVICE_SERVICE_URL`, `USER_SERVICE_URL`, `INFLUX_URL`, `INFLUX_ORG`, `INFLUX_BUCKET`)
+  - `env` (deployment-specific):
+    - `SERVER_PORT: 8083`
+    - `INFLUX_TOKEN` — from global secret
+  - **No** `SPRING_DATASOURCE_PASSWORD` — usage-service has no MySQL dependency
 - `templates/service.yaml` — ClusterIP port 8083
 
 ### Modified files
 - `microservices-chart/Chart.yaml` — add usage-service dependency
 - `microservices-chart/values.yaml` — add usageService block (enabled: true)
 - `microservices-chart/templates/configmap-global.yaml` — add:
-  - `INFLUX_URL=http://infra-influxdb.default.svc.cluster.local:8086`
-  - `INFLUX_ORG=chieaid24`
-  - `INFLUX_BUCKET=usage-bucket`
-  - `USER_SERVICE_URL=http://microservices-user-service.default.svc.cluster.local:8080/api/v1/user`
-  - `USAGE_SERVICE_URL=http://microservices-usage-service.default.svc.cluster.local:8083/api/v1/usage`
-- `microservices-chart/templates/secret-global.yaml` — add `INFLUX_TOKEN=my-token`
+  - `INFLUX_URL=http://infra-influxdb.default.svc.cluster.local:8086` — maps to `${influx.url}` in InfluxDBConfig
+  - `INFLUX_ORG=chieaid24` — maps to `${influx.org}` in InfluxDBConfig and UsageService
+  - `INFLUX_BUCKET=usage-bucket` — maps to `${influx.bucket}` in UsageService
+  - `USAGE_SERVICE_URL=http://microservices-usage-service.default.svc.cluster.local:8083/api/v1/usage` — for insight-service (Phase 6)
+  - Note: `USER_SERVICE_URL` and `DEVICE_SERVICE_URL` already present from Phase 2
+- `microservices-chart/templates/secret-global.yaml` — add:
+  - `INFLUX_TOKEN=my-token` — maps to `${influx.token}` in InfluxDBConfig
 
 ### Verification
 ```bash
@@ -144,13 +149,13 @@ kubectl logs deployment/microservices-usage-service
 
 ## Phase 5 — Ollama
 
-**Why last in infra:** Auto-downloads deepseek-r1 (~4–7 GB) on first start. Needs a PersistentVolumeClaim so the model survives pod restarts. Probes need generous `initialDelaySeconds`. Isolated to avoid blocking all other work on a slow download.
+**Why last in infra:** Auto-downloads gemma3:4b (~2.5 GB) on first start. Needs a PersistentVolumeClaim so the model survives pod restarts. Probes need generous `initialDelaySeconds`. Isolated to avoid blocking all other work on a slow download.
 
 ### New files in `k8s/charts/infra-chart/charts/ollama/`
 - `Chart.yaml` — name: ollama, version: 0.1.0
-- `values.yaml` — image: ollama/ollama:latest, port: 11434, model: deepseek-r1, persistence: true, storageSize: 10Gi
+- `values.yaml` — image: ollama/ollama:latest, port: 11434, model: gemma3:4b, persistence: true, storageSize: 10Gi
 - `templates/statefulset.yaml`:
-  - Command (mirrors docker-compose): `ollama serve &` → wait for ready → `ollama pull deepseek-r1` → `wait`
+  - Command (mirrors docker-compose): `ollama serve &` → wait for ready → `ollama pull gemma3:4b` → `wait`
   - PVC volumeMount at `/root/.ollama`
   - Probes: `initialDelaySeconds: 120`, `periodSeconds: 15`
 - `templates/pvc.yaml` — PersistentVolumeClaim using Minikube's default StorageClass
@@ -165,7 +170,7 @@ kubectl logs deployment/microservices-usage-service
 helm upgrade infra ./k8s/charts/infra-chart
 kubectl get pods -w       # wait for infra-ollama-0 Running (may take 5-10 min first time)
 kubectl logs statefulset/infra-ollama -f
-# Confirm: "deepseek-r1" model pulled successfully
+# Confirm: "gemma3:4b" model pulled successfully
 ```
 
 ---
@@ -181,7 +186,7 @@ kubectl logs statefulset/infra-ollama -f
   - Init containers (busybox:1.36):
     1. `wait-for-ollama` — `wget` on `infra-ollama.default.svc.cluster.local:11434/api/tags`
     2. `wait-for-usage-service` — `wget` on `microservices-usage-service.default.svc.cluster.local:8083/actuator/health`
-  - Env: `SPRING_AI_OLLAMA_BASE_URL`, `USAGE_SERVICE_URL`
+  - Env: `SPRING_AI_OLLAMA_BASE_URL`, `SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL=gemma3:4b`, `USAGE_SERVICE_URL`
 - `templates/service.yaml` — ClusterIP port 8085
 
 ### Modified files
@@ -189,6 +194,7 @@ kubectl logs statefulset/infra-ollama -f
 - `microservices-chart/values.yaml` — add insightService block (enabled: true)
 - `microservices-chart/templates/configmap-global.yaml` — add:
   - `SPRING_AI_OLLAMA_BASE_URL=http://infra-ollama.default.svc.cluster.local:11434`
+  - `SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL=gemma3:4b`
 
 ### Verification
 ```bash

@@ -12,8 +12,24 @@ data:
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local:9092"
   SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.springframework.kafka.support.serializer.JsonSerializer"
   SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+  SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.springframework.kafka.support.serializer.JsonDeserializer"
+  SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "*"
+
+  # Mail (Mailpit)
+  SPRING_MAIL_HOST: "infra-mailpit.{{ .Values.global.namespace }}.svc.cluster.local"
+  SPRING_MAIL_PORT: "1025"
+
+  # InfluxDB
+  INFLUX_URL: "http://infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local:8086"
+  INFLUX_ORG: "chieaid24"
+  INFLUX_BUCKET: "usage-bucket"
+
+  # Ollama (Spring AI)
+  SPRING_AI_OLLAMA_BASE_URL: "http://infra-ollama.{{ .Values.global.namespace }}.svc.cluster.local:11434"
+  SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: "qwen2.5:0.5b"
 
   # Service URLs
   USER_SERVICE_URL: "http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080/api/v1/user"
   DEVICE_SERVICE_URL: "http://{{ .Release.Name }}-device-service.{{ .Values.global.namespace }}.svc.cluster.local:8081/api/v1/device"
   INGESTION_ENDPOINT: "http://{{ .Release.Name }}-ingestion-service.{{ .Values.global.namespace }}.svc.cluster.local:8082/api/v1/ingestion"
+  USAGE_SERVICE_URL: "http://{{ .Release.Name }}-usage-service.{{ .Values.global.namespace }}.svc.cluster.local:8083/api/v1/usage"
