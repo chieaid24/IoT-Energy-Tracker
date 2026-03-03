@@ -13,7 +13,7 @@ services:
       retries: 10
       start_period: 40s
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db-data:/var/lib/mysql
@@ -119,6 +119,13 @@ services:
       - "11434:11434"
     environment:
       OLLAMA_KEEP_ALIVE: -1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     volumes:
       - ollama-data:/root/.ollama
     entrypoint: []
@@ -248,6 +255,21 @@ services:
     depends_on:
       - usage-service
       - ollama
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - user-service
+      - device-service
+      - ingestion-service
+      - usage-service
+      - alert-service
+      - insight-service
 
 volumes:
   db-data:

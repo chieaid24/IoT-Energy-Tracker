@@ -58,6 +58,8 @@
 
 ## Run With Docker
 
+> Requires an NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed for Ollama GPU acceleration.
+
 Pre-pull Ollama (recommended for slow networks):
 ```
 docker pull ollama/ollama:latest
