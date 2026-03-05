@@ -143,9 +143,9 @@ services:
             fi;
             sleep 1;
           done;
-          ollama pull qwen2.5:0.5b;
-          echo "Warming up model qwen2.5:0.5b...";
-          ollama run qwen2.5:0.5b "hello" > /dev/null 2>&1 || true;
+          ollama pull gemma3:4b;
+          echo "Warming up model gemma3:4b...";
+          ollama run gemma3:4b "hello" > /dev/null 2>&1 || true;
           echo "Warmup complete.";
           wait
 
@@ -251,7 +251,9 @@ services:
       SERVER_PORT: 8085
       USAGE_SERVICE_URL: http://usage-service:8083/api/v1/usage
       SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
-      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: qwen2.5:0.5b
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: gemma3:4b
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_TEMPERATURE: "0.4"
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_TOP-P: "0.5"
     depends_on:
       - usage-service
       - ollama

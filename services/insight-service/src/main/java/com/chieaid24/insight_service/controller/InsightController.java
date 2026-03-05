@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,16 +19,16 @@ public class InsightController {
     this.insightService = insightService;
   }
 
-  @GetMapping("/saving-tips/{userId}")
-  public ResponseEntity<InsightDto> getSavingTips(@PathVariable Long userId) {
-    InsightDto insightDto = insightService.getSavingTips(userId);
-    return ResponseEntity.ok(insightDto);
-  }
+  // @GetMapping("/saving-tips/{userId}")
+  // public ResponseEntity<InsightDto> getSavingTips(@PathVariable Long userId) {
+  //   InsightDto insightDto = insightService.getSavingTips(userId);
+  //   return ResponseEntity.ok(insightDto);
+  // }
 
-  // get usage data from last 3 days and AI powered insights
+  // get usage data from the last X days and return AI powered insights
   @GetMapping("/overview/{userId}")
-  public ResponseEntity<InsightDto> getOverview(@PathVariable Long userId) {
-    InsightDto insightDto = insightService.getOverview(userId);
+  public ResponseEntity<InsightDto> getOverview(@PathVariable Long userId, @RequestParam(defaultValue = "3") int days) {
+    InsightDto insightDto = insightService.getOverview(userId, days);
     return ResponseEntity.ok(insightDto);
   }
 }

@@ -3,6 +3,7 @@ package com.chieaid24.user_service.service;
 import com.chieaid24.user_service.dto.UserDto;
 import com.chieaid24.user_service.entity.User;
 import com.chieaid24.user_service.repository.UserRepository;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +60,11 @@ public class UserService {
     userRepository.delete(existingUser);
   }
 
+  public void deleteAllUsers() {
+    userRepository.deleteAllUsers();
+    userRepository.resetAutoIncrement();
+  }
+
   public void createDummyUsers(int users) {
     for (int i = 1; i <= users; i++) {
       User dummyUser =
@@ -77,6 +83,10 @@ public class UserService {
 
   public Long getTotalUsers() {
     return userRepository.count();
+  }
+
+  public List<Long> getAllUserIds() {
+    return userRepository.findAll().stream().map(User::getId).toList();
   }
 
   private UserDto toDto(User user) {

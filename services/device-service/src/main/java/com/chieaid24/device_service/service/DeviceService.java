@@ -4,6 +4,7 @@ import com.chieaid24.device_service.client.UserClient;
 import com.chieaid24.device_service.dto.DeviceDto;
 import com.chieaid24.device_service.entity.Device;
 import com.chieaid24.device_service.exception.DeviceNotFoundException;
+import com.chieaid24.device_service.exception.UserNotFoundException;
 import com.chieaid24.device_service.model.DeviceType;
 import com.chieaid24.device_service.repository.DeviceRepository;
 import java.util.List;
@@ -62,15 +63,21 @@ public class DeviceService {
     deviceRepository.deleteById(id);
   }
 
+  public void deleteAllDevices() {
+    deviceRepository.truncate();
+  }
+
   public List<DeviceDto> getAllDevicesByUserId(Long userId) {
     List<Device> devices = deviceRepository.findAllByUserId(userId);
     return devices.stream().map(this::mapToDto).toList();
   }
 
   public void createDummyDevices(int devices) {
+    List<Long> userIds = userClient.getUserIds();
 
-    // call to get the number of users from user-service
-    int userCount = userClient.getUserCount();
+    if (userIds.isEmpty()) {
+      throw new UserNotFoundException("No users exist to assign dummy devices");
+    }
 
     for (int i = 1; i <= devices; i++) {
       Device dummyDevice =
@@ -78,7 +85,7 @@ public class DeviceService {
               .name("Dummy Device " + i)
               .type(DeviceType.values()[(i % DeviceType.values().length)])
               .location("Location " + ((i % 5) + 1))
-              .userId((long) ((i % userCount) + 1)) // Assigning to user IDs 1 to 10
+              .userId(userIds.get((i - 1) % userIds.size()))
               .build();
       deviceRepository.save(dummyDevice);
     }
