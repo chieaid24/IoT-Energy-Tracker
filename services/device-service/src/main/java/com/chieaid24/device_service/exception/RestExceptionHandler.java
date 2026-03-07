@@ -12,4 +12,9 @@ public class RestExceptionHandler {
   public ResponseEntity<String> handleNotFound(DeviceNotFoundException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
   }
+
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+  }
 }

@@ -2,6 +2,7 @@ package com.chieaid24.user_service.controller;
 
 import com.chieaid24.user_service.dto.UserDto;
 import com.chieaid24.user_service.service.UserService;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,6 +53,11 @@ public class UserController {
     return ResponseEntity.ok(total);
   }
 
+  @GetMapping("/ids")
+  public ResponseEntity<List<Long>> getAllUserIds() {
+    return ResponseEntity.ok(userService.getAllUserIds());
+  }
+
   @PutMapping("/{id}")
   public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
 
@@ -71,5 +77,11 @@ public class UserController {
     } catch (IllegalArgumentException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
+  }
+
+  @DeleteMapping("/all")
+  public ResponseEntity<Void> deleteAllUsers() {
+    userService.deleteAllUsers();
+    return ResponseEntity.noContent().build();
   }
 }

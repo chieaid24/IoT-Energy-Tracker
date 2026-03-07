@@ -70,6 +70,12 @@ public class DeviceController {
     return ResponseEntity.noContent().build();
   }
 
+  @DeleteMapping("/all")
+  public ResponseEntity<Void> deleteAllDevices() {
+    deviceService.deleteAllDevices();
+    return ResponseEntity.noContent().build();
+  }
+
   @GetMapping("/user/{userId}")
   public ResponseEntity<List<DeviceDto>> getAllDevicesByUserId(@PathVariable Long userId) {
     List<DeviceDto> devices = deviceService.getAllDevicesByUserId(userId);

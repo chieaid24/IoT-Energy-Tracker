@@ -1,5 +1,7 @@
 package com.chieaid24.device_service.client;
 
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -21,5 +23,12 @@ public class UserClient {
 
     ResponseEntity<Integer> response = restTemplate.getForEntity(url, Integer.class);
     return response.getBody();
+  }
+
+  public List<Long> getUserIds() {
+    String url = UriComponentsBuilder.fromUriString(baseUrl).path("/ids").toUriString();
+
+    ResponseEntity<Long[]> response = restTemplate.getForEntity(url, Long[].class);
+    return Arrays.asList(response.getBody());
   }
 }
