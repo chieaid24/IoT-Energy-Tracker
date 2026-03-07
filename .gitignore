@@ -99,12 +99,16 @@ $RECYCLE.BIN/
 # Linux
 .directory
 
-# Node (if using npm/Node in future)
+# Node
 node_modules/
 npm-debug.log
 yarn-error.log
 package-lock.json
 yarn.lock
+
+# Next.js
+.next/
+next-env.d.ts
 
 # Python (if using Python)
 __pycache__/
