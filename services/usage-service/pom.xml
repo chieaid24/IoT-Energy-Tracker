@@ -8,7 +8,7 @@
 		<version>4.0.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.chieai24</groupId>
+	<groupId>com.chieaid24</groupId>
 	<artifactId>usage-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>usage-service</name>
@@ -73,14 +73,10 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
-		<!-- Observability: Distributed tracing via OpenTelemetry -->
+		<!-- Observability: OpenTelemetry tracing (SB 4.x starter) -->
 		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-tracing-bridge-otel</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-exporter-otlp</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-opentelemetry</artifactId>
 		</dependency>
 	</dependencies>
 
