@@ -6,3 +6,9 @@ prometheus:
 
 grafana:
   enabled: true
+
+loki:
+  enabled: true
+
+promtail:
+  enabled: true

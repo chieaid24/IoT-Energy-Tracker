@@ -246,22 +246,6 @@ build-and-push          ← matrix job, one runner per changed service (parallel
 ECR Public registry     ← image available at :latest tag
 ```
 
-### Change Detection
-
-`dorny/paths-filter` filters changed files under `services/**` and normalizes them to their top-level service directory (e.g., `services/user-service/src/Foo.java` → `services/user-service`). The deduplicated list becomes a matrix, so multiple services changed in one commit build in parallel — and untouched services are skipped entirely.
-
-### Image Naming
-
-Images are pushed to Amazon ECR Public using variables from the repository:
-
-```
-public.ecr.aws/<PUBLIC_REGISTRY_ALIAS>/<NAMESPACE>/<service-name>:latest
-```
-
-Example: `public.ecr.aws/v6r1m8q2/energy-tracker/user-service:latest`
-
-The Helm microservices chart references these URIs directly in each subchart's `values.yaml`.
-
 ### Deploying Updated Images to Kubernetes
 
 After new images are pushed, apply them to the cluster with:
