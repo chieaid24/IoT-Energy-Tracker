@@ -36,8 +36,8 @@ data:
 
   # Observability — Tracing (OTLP HTTP to Tempo)
   MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
-  MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://infra-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
-  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://infra-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
+  MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://observability-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://observability-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
 
   # Observability — Structured JSON logging (ECS format)
   LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"

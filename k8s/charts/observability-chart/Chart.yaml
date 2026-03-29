@@ -1,0 +1,11 @@
+apiVersion: v2
+name: observability-chart
+description: Energy Tracker Observability Stack (Prometheus, Grafana, Loki, Promtail, Tempo)
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: prometheus
+    version: "0.1.0"
+    condition: prometheus.enabled
