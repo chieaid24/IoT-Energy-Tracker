@@ -3,3 +3,6 @@ global:
 
 prometheus:
   enabled: true
+
+grafana:
+  enabled: true

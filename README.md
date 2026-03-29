@@ -224,6 +224,60 @@ docker-compose.yml                 # Core application stack
 docker-compose.observability.yml   # Prometheus, Grafana, Loki, Promtail, Tempo
 ```
 
+## CI/CD
+
+### Pipeline Overview
+
+On every push to `main`, a GitHub Actions workflow (`.github/workflows/ci.yaml`) detects which services changed and builds only those — avoiding full rebuilds on every commit.
+
+```
+push to main
+    │
+    ▼
+detect-changes          ← dorny/paths-filter scans services/**
+    │                      normalizes paths → unique service directories
+    ▼
+build-and-push          ← matrix job, one runner per changed service (parallel)
+    │  configure AWS credentials
+    │  login to Amazon ECR Public
+    │  docker build <service>/
+    │  docker push public.ecr.aws/<alias>/energy-tracker/<service>:latest
+    ▼
+ECR Public registry     ← image available at :latest tag
+```
+
+### Change Detection
+
+`dorny/paths-filter` filters changed files under `services/**` and normalizes them to their top-level service directory (e.g., `services/user-service/src/Foo.java` → `services/user-service`). The deduplicated list becomes a matrix, so multiple services changed in one commit build in parallel — and untouched services are skipped entirely.
+
+### Image Naming
+
+Images are pushed to Amazon ECR Public using variables from the repository:
+
+```
+public.ecr.aws/<PUBLIC_REGISTRY_ALIAS>/<NAMESPACE>/<service-name>:latest
+```
+
+Example: `public.ecr.aws/v6r1m8q2/energy-tracker/user-service:latest`
+
+The Helm microservices chart references these URIs directly in each subchart's `values.yaml`.
+
+### Deploying Updated Images to Kubernetes
+
+After new images are pushed, apply them to the cluster with:
+
+```bash
+helm upgrade microservices ./k8s/charts/microservices-chart
+```
+
+Kubernetes will pull the updated `:latest` images from ECR and perform a rolling restart of the affected deployments.
+
+### Automated Code Review
+
+Every pull request opened against `main` triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against the project's `CLAUDE.md` conventions and posts inline feedback on the PR. Reviewers can also mention `@claude` in any PR comment to request a targeted review.
+
+---
+
 ## Extensions (in progress)
 - **Frontend**: Next.js dashboard to manage devices, trigger simulation, and view insights.
 - **Observability (K8s)**: Migrate the observability stack into a dedicated `k8s/charts/observability-chart/` Helm chart.

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: observability-grafana
+spec:
+  selector:
+    app: observability-grafana
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3000
+  type: LoadBalancer
