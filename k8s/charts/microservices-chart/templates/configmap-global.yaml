@@ -28,6 +28,24 @@ data:
   SPRING_AI_OLLAMA_BASE_URL: "http://infra-ollama.{{ .Values.global.namespace }}.svc.cluster.local:11434"
   SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: "qwen2.5:0.5b"
 
+  # Observability — Metrics
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+  MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+  MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+  MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+
+  # Observability — Tracing (OTLP HTTP to Tempo)
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+  MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://observability-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://observability-tempo.{{ .Values.global.namespace }}.svc.cluster.local:4318/v1/traces"
+
+  # Observability — Structured JSON logging (ECS format)
+  LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
+
+  # Observability — Kafka observation (for Kafka tracing)
+  SPRING_KAFKA_TEMPLATE_OBSERVATION_ENABLED: "true"
+  SPRING_KAFKA_LISTENER_OBSERVATION_ENABLED: "true"
+
   # Service URLs
   USER_SERVICE_URL: "http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080/api/v1/user"
   DEVICE_SERVICE_URL: "http://{{ .Release.Name }}-device-service.{{ .Values.global.namespace }}.svc.cluster.local:8081/api/v1/device"

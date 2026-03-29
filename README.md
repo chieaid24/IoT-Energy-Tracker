@@ -1,6 +1,6 @@
 <h1 align="center">⚡️ Home IoT Energy Tracker</h1>
 
-> Java Spring Boot microservice-based architecture to handle 500k+ users and 2.5m+ devices. Aggregates energy usage, analyzes + stores time-series IoT data, and produces AI-approved efficiency insights. 
+> Java Spring Boot microservice-based architecture to handle 500k+ users and 2.5m+ devices. Aggregates energy usage, analyzes + stores time-series IoT data, and produces AI-generated efficiency insights.
 
 ## System Design
 <img width="6288" height="4516" alt="IoT Telemetry System Design4" src="https://github.com/user-attachments/assets/74640047-1b3c-47b9-98df-3fb663cf7181" />
@@ -8,81 +8,115 @@
 ## Tools / Frameworks Used
 | Category | Tools |
 | --- | --- |
-| Language / Frameworks | Java 21 (Maven), Spring Boot, Spring Actuator |
+| Language / Frameworks | Java 21 (Maven), Spring Boot 4.0.1 / 3.5.9, Spring Actuator, Spring AI 1.1.2 |
 | Database | MySQL, InfluxDB, Flyway |
-| Microservices | Kafka, Ollama (qwen2.5:0.5b) |
+| Messaging | Apache Kafka |
+| AI Inference | Ollama (gemma3:4b) |
+| Observability | Prometheus, Grafana, Loki, Promtail, Tempo (OpenTelemetry) |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS v4, shadcn/ui |
 | Dev Tools | Docker, Docker Compose, Mailpit |
+| Orchestration | Kubernetes (Minikube), Helm |
 
 ## Technical Highlights
-- Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting.
-- Dual persistence model: **MySQL** for relational data and **InfluxDB** for time-series usage analytics.
-- AI-powered insights service that integrates **Ollama** (qwen2.5:0.5b) for actionable recommendations.
+- Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting across three topics.
+- **Dual persistence model**: MySQL for relational data (users, devices, alerts) and InfluxDB for time-series usage analytics.
+- **AI-powered insights** via Spring AI + Ollama (gemma3:4b), polling usage aggregates on a cron schedule to generate efficiency recommendations.
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
-- **Health-aware services** via Spring Actuator endpoints for production-ready checks.
+- **Full observability stack**: distributed tracing (OTLP → Tempo), structured log aggregation (ECS JSON → Promtail → Loki), and Prometheus metrics — all correlated in Grafana.
+- **Spring Boot version split**: 5 services on Boot 4.0.1, insight-service on Boot 3.5.9 (Spring AI 1.1.2 does not yet support Boot 4.x).
+- **Production-grade Kubernetes deployment** via Helm with init containers, health probes, shared ConfigMaps/Secrets, and ingress routing.
 
-## General Service Overview
+## Data Flow
 
-`user-service` (port 8080)
-- Manages user profiles and identity data.
-- Owns relational data and migrations for user records.
+```
+ingestion-service  →  [Kafka: energy-usage]  →  usage-service  →  InfluxDB
+                                                      ↓
+                                             [Kafka: energy-alerts]
+                                                      ↓
+                                               alert-service  →  MySQL + Mailpit
 
-`device-service` (port 8081)
-- Manages registered devices tied to users.
-- Provides device metadata for usage attribution.
+insight-service  →  (polls usage-service REST)  →  Ollama (gemma3:4b)  →  AI insights
+```
 
-`ingestion-service` (port 8082)
-- Receives usage events.
-- Runs a multi-threaded event simulator during development.
-- Publishes usage events to Kafka.
+## Services
 
-`usage-service` (port 8083)
-- Consumes usage events from Kafka.
-- Stores time-series data in InfluxDB.
-- Enriches usage with user/device data.
-- Emits alert events for high usage.
+| Service | Port | Persistence | Notes |
+|---|---|---|---|
+| user-service | 8080 | MySQL | Flyway migrations, LoggingAspect, ExecutionTimeAspect |
+| device-service | 8081 | MySQL | Inter-service calls to user-service |
+| ingestion-service | 8082 | — | Kafka producer, multi-threaded event simulator |
+| usage-service | 8083 | InfluxDB | Kafka consumer, emits alert events |
+| alert-service | 8084 | MySQL | Kafka consumer, Spring Mail via Mailpit |
+| insight-service | 8085 | — | Spring AI + Ollama, polls usage-service |
 
-`alert-service` (port 8084)
-- Consumes alert events from Kafka.
-- Persists alerts in MySQL.
-- Sends notifications through SMTP (Mailpit in local dev).
+## Observability
 
-`insight-service` (port 8085)
-- Aggregates usage data from usage-service.
-- Calls Ollama to generate efficiency recommendations.
+All 6 services are fully instrumented across three observability pillars, correlated in Grafana.
 
-## High Level Data Flow
-- `ingestion-service` publishes `energy-usage` events to Kafka.
-- `usage-service` consumes events, writes to InfluxDB, and produces alert events.
-- `alert-service` consumes alert events, stores alerts in MySQL, and sends email.
-- `insight-service` runs on a cron schedule, requesting usage aggregates and calling Ollama for insights.
+### Architecture
+
+```
+Spring Boot Services
+  ├── /actuator/prometheus  ──────────────► Prometheus ─────► Grafana
+  ├── OTLP traces (HTTP :4318) ──────────► Tempo ──────────► Grafana
+  └── stdout JSON (ECS format) ─► Promtail ─► Loki ─────────► Grafana
+```
+
+### Metrics
+- Micrometer + `micrometer-registry-prometheus` on all services.
+- Prometheus scrapes `/actuator/prometheus` from all 6 services every 15s.
+- JVM, HTTP, and Kafka consumer/producer metrics collected out of the box.
+
+### Distributed Tracing
+- Boot 4.x services: `spring-boot-starter-opentelemetry` — traces pushed via OTLP HTTP to Tempo.
+- Boot 3.x (insight-service): `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp`.
+- Kafka observation enabled: trace context propagated across all producer/consumer spans.
+- 100% sampling rate in local dev (`MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0`).
+
+### Logs
+- All services emit **ECS-formatted JSON** to stdout (`LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`).
+- Promtail uses Docker SD to collect container logs and extract `level`, `service`, `traceId`, and `spanId` as Loki labels.
+- Log-to-trace correlation works in Grafana — click a log line to jump to the matching Tempo trace.
+
+### Dashboards (provisioned, no manual setup)
+| Dashboard | Description |
+|---|---|
+| Service Health Overview | HTTP request rates, error rates, latency per service |
+| JVM Metrics | Heap, GC pause, thread count per service |
+| Kafka Event Pipeline | Producer/consumer lag, throughput for `energy-usage` and `energy-alerts` topics |
+| IoT Business Metrics | Device count, energy readings, alert frequency |
+
+### Observability Ports (Docker Compose)
+| Service | Port |
+|---|---|
+| Prometheus | `localhost:9090` |
+| Grafana | `localhost:3001` (admin / admin) |
+| Loki | `localhost:3100` |
+| Tempo | `localhost:3200` |
 
 ## Run With Docker
 
 > Requires an NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed for Ollama GPU acceleration.
 
-Pre-pull Ollama (recommended for slow networks):
-```
-docker pull ollama/ollama:latest
-```
-
-Build service images:
-```
-docker compose build
-```
-
-Start the stack:
-```
+Start the core stack:
+```bash
 docker compose up -d
 ```
 
-Check status:
+Start the observability stack (separate compose file, shares `iot-network`):
+```bash
+docker compose -f docker-compose.observability.yml up -d
 ```
+
+Check status:
+```bash
 docker compose ps
 ```
 
-Stop the stack:
-```
+Stop both stacks:
+```bash
 docker compose down
+docker compose -f docker-compose.observability.yml down
 ```
 
 ## Run With Kubernetes (Minikube)
@@ -107,14 +141,14 @@ minikube addons enable ingress
 helm install infra ./k8s/charts/infra-chart
 ```
 
-This deploys: MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, and Ollama (with GPU acceleration).
+Deploys: MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, and Ollama (GPU-backed StatefulSet with PVC).
 
 Watch until all pods are running:
 ```bash
 kubectl get pods -w
 ```
 
-Ollama will take several minutes on first start since it pulls and warms up the `qwen2.5:0.5b` model. Watch progress:
+Ollama pulls and warms up `gemma3:4b` on first start — watch progress:
 ```bash
 kubectl logs statefulset/infra-ollama -f
 ```
@@ -125,12 +159,7 @@ kubectl logs statefulset/infra-ollama -f
 helm install microservices ./k8s/charts/microservices-chart
 ```
 
-This deploys: user-service, device-service, ingestion-service, usage-service, alert-service, and insight-service.
-
-Watch until all pods are running (or use `minikube dashboard`):
-```bash
-kubectl get pods -w
-```
+Deploys all 6 microservices with init containers that gate startup on their dependencies (MySQL, Kafka, upstream services).
 
 ### 5. Start Minikube Tunnel
 
@@ -151,17 +180,14 @@ This exposes LoadBalancer services and the ingress to `localhost`.
 | InfluxDB UI | `http://localhost:8086` |
 | MySQL | `localhost:3307` (root / password) |
 
-### Upgrade & Restart
+### Upgrade & Teardown
 
-After changing chart values:
 ```bash
+# After changing chart values:
 helm upgrade infra ./k8s/charts/infra-chart
 helm upgrade microservices ./k8s/charts/microservices-chart
-```
 
-### Teardown
-
-```bash
+# Teardown:
 helm uninstall microservices
 helm uninstall infra
 minikube stop
@@ -170,22 +196,37 @@ minikube stop
 ---
 
 ## Health Checks
-Each service exposes Spring Actuator health at:
-- http://localhost:8080/actuator/health (user-service)
-- http://localhost:8081/actuator/health (device-service)
-- http://localhost:8082/actuator/health (ingestion-service)
-- http://localhost:8083/actuator/health (usage-service)
-- http://localhost:8084/actuator/health (alert-service)
-- http://localhost:8085/actuator/health (insight-service)
+
+Each service exposes Spring Actuator endpoints:
+
+```
+http://localhost:{port}/actuator/health
+http://localhost:{port}/actuator/prometheus
+```
+
+Ports: user-service `8080`, device-service `8081`, ingestion-service `8082`, usage-service `8083`, alert-service `8084`, insight-service `8085`.
 
 ## Project Layout
-- `alert-service/`, `device-service/`, `ingestion-service/`, `insight-service/`, `usage-service/`, `user-service/`
-- `docker/` contains init scripts and Kafka data volume mapping.
-- `docker-compose.yml` defines the full local stack.
+
+```
+services/               # Six Spring Boot microservices
+frontend/               # Next.js 16 frontend (App Router, Tailwind v4, shadcn/ui)
+observability/
+  ├── prometheus/       # prometheus.yml — scrape configs for all services
+  ├── grafana/          # Provisioned datasources (Prometheus, Loki, Tempo) + 4 dashboards
+  ├── loki/             # loki.yaml — in-memory ring, TSDB storage
+  ├── promtail/         # promtail.yaml — Docker SD, ECS JSON pipeline
+  └── tempo/            # tempo.yaml — OTLP receivers, local storage
+k8s/
+  ├── charts/infra-chart/          # MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, Ollama
+  └── charts/microservices-chart/  # All 6 microservices + shared ConfigMap/Secret/Ingress
+docker-compose.yml                 # Core application stack
+docker-compose.observability.yml   # Prometheus, Grafana, Loki, Promtail, Tempo
+```
 
 ## Extensions (in progress)
-- Add Next.js frontend to start/stop simulation, and run within the cluster.
-- Redis caching layer, CDN for static content, and queue for AI inference requests.
-- Stronger AI guardrails to reduce hallucinations and improve validity
-- MySQL read replicas
-- Migrate cluster to AWS EKS with IAM, ALB/NLB ingress, and use more cloud-native, decoupled services (ex. convert `alerting-service` to a Lambda function, MSK instead of Kafka, etc)
+- **Frontend**: Next.js dashboard to manage devices, trigger simulation, and view insights.
+- **Observability (K8s)**: Migrate the observability stack into a dedicated `k8s/charts/observability-chart/` Helm chart.
+- **Redis** caching layer and queue for AI inference requests.
+- **MySQL read replicas** for query scalability.
+- **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.

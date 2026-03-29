@@ -155,9 +155,16 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_APPLICATION_NAME: user-service
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       mysql:
         condition: service_healthy
@@ -168,11 +175,18 @@ services:
     ports:
       - "8081:8081"
     environment:
+      SPRING_APPLICATION_NAME: device-service
       SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
       USER_SERVICE_URL: http://user-service:8080/api/v1/user
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       mysql:
         condition: service_healthy
@@ -183,6 +197,7 @@ services:
     ports:
       - "8082:8082"
     environment:
+      SPRING_APPLICATION_NAME: ingestion-service
       SERVER_PORT: 8082
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
@@ -192,6 +207,13 @@ services:
       SIMULATION_PARALLEL_THREADS: 10
       SIMULATION_REQUESTS_PER_INTERVAL: 100
       SIMULATION_INTERVAL_MS: 5000
+      SPRING_KAFKA_TEMPLATE_OBSERVATION_ENABLED: "true"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       - kafka
 
@@ -201,6 +223,7 @@ services:
     ports:
       - "8083:8083"
     environment:
+      SPRING_APPLICATION_NAME: usage-service
       SERVER_PORT: 8083
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
@@ -213,6 +236,14 @@ services:
       INFLUX_BUCKET: usage-bucket
       DEVICE_SERVICE_URL: http://device-service:8081/api/v1/device
       USER_SERVICE_URL: http://user-service:8080/api/v1/user
+      SPRING_KAFKA_TEMPLATE_OBSERVATION_ENABLED: "true"
+      SPRING_KAFKA_LISTENER_OBSERVATION_ENABLED: "true"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       - kafka
       - influxdb
@@ -225,6 +256,7 @@ services:
     ports:
       - "8084:8084"
     environment:
+      SPRING_APPLICATION_NAME: alert-service
       SERVER_PORT: 8084
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -234,6 +266,13 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: 1025
+      SPRING_KAFKA_LISTENER_OBSERVATION_ENABLED: "true"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       mysql:
         condition: service_healthy
@@ -248,12 +287,19 @@ services:
     ports:
       - "8085:8085"
     environment:
+      SPRING_APPLICATION_NAME: insight-service
       SERVER_PORT: 8085
       USAGE_SERVICE_URL: http://usage-service:8083/api/v1/usage
       SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
       SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: gemma3:4b
       SPRING_AI_OLLAMA_CHAT_OPTIONS_TEMPERATURE: "0.4"
       SPRING_AI_OLLAMA_CHAT_OPTIONS_TOP-P: "0.5"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo:4318/v1/traces"
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
     depends_on:
       - usage-service
       - ollama
@@ -277,3 +323,7 @@ volumes:
   db-data:
   kafka-data:
   ollama-data:
+
+networks:
+  default:
+    name: iot-network
