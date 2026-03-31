@@ -12,3 +12,6 @@ loki:
 
 promtail:
   enabled: true
+
+tempo:
+  enabled: true

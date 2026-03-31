@@ -75,6 +75,8 @@ spec:
         - configMapRef:
             name: {{ .Release.Name }}-global-config
         env:
+        - name: SPRING_APPLICATION_NAME
+          value: "insight-service"
         - name: SERVER_PORT
           value: "{{ .Values.port }}"
         resources:

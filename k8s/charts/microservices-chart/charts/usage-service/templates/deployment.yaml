@@ -123,6 +123,8 @@ spec:
         - configMapRef:
             name: {{ .Release.Name }}-global-config
         env:
+        - name: SPRING_APPLICATION_NAME
+          value: "usage-service"
         - name: SERVER_PORT
           value: "{{ .Values.port }}"
         - name: INFLUX_TOKEN

@@ -51,6 +51,8 @@ spec:
         - configMapRef:
             name: {{ .Release.Name }}-global-config
         env:
+        - name: SPRING_APPLICATION_NAME
+          value: "user-service"
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observability-tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: observability-tempo
+  template:
+    metadata:
+      labels:
+        app: observability-tempo
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: tempo
+          image: grafana/tempo:2.6.0
+          args:
+            - "-config.file=/etc/tempo/tempo.yaml"
+          ports:
+            - containerPort: 3200
+              name: http
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo
+            - name: storage
+              mountPath: /tmp/tempo
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3200
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: observability-tempo-config
+        - name: storage
+          emptyDir: {}
