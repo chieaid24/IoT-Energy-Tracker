@@ -175,7 +175,7 @@ This exposes LoadBalancer services and the ingress to `localhost`.
 | Service | URL |
 |---|---|
 | Microservices API (via ingress) | `http://localhost/api/v1/...` |
-| Kafka UI | `http://localhost:8080` |
+| Kafka UI | `http://localhost:8070` |
 | Mailpit (email UI) | `http://localhost:8025` |
 | InfluxDB UI | `http://localhost:8086` |
 | MySQL | `localhost:3307` (root / password) |

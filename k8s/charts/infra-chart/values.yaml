@@ -104,7 +104,7 @@ kafkaUi:
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer
-    port: 8080
+    port: 8070
   resources:
     requests:
       memory: "256Mi"
