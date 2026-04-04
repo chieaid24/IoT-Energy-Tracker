@@ -20,8 +20,8 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=iot-energy
+      - GF_SECURITY_ADMIN_PASSWORD=password
       - GF_AUTH_ANONYMOUS_ENABLED=false
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro

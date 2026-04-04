@@ -90,7 +90,7 @@ Spring Boot Services
 | Service | Port |
 |---|---|
 | Prometheus | `localhost:9090` |
-| Grafana | `localhost:3001` (admin / admin) |
+| Grafana | `localhost:3001` (iot-energy / password) |
 | Loki | `localhost:3100` |
 | Tempo | `localhost:3200` |
 
@@ -153,7 +153,20 @@ Ollama pulls and warms up `gemma3:4b` on first start — watch progress:
 kubectl logs statefulset/infra-ollama -f
 ```
 
-### 4. Install the Microservices Chart
+### 4. Install the Observability Chart
+
+```bash
+helm install observability ./k8s/charts/observability-chart
+```
+
+Deploys: Prometheus, Grafana, Loki, Promtail (DaemonSet), and Tempo.
+
+Watch until all pods are running:
+```bash
+kubectl get pods -w
+```
+
+### 5. Install the Microservices Chart
 
 ```bash
 helm install microservices ./k8s/charts/microservices-chart
@@ -161,7 +174,7 @@ helm install microservices ./k8s/charts/microservices-chart
 
 Deploys all 6 microservices with init containers that gate startup on their dependencies (MySQL, Kafka, upstream services).
 
-### 5. Start Minikube Tunnel
+### 6. Start Minikube Tunnel
 
 In a separate terminal, run and keep open:
 ```bash
@@ -175,20 +188,24 @@ This exposes LoadBalancer services and the ingress to `localhost`.
 | Service | URL |
 |---|---|
 | Microservices API (via ingress) | `http://localhost/api/v1/...` |
-| Kafka UI | `http://localhost:8080` |
+| Kafka UI | `http://localhost:8070` |
 | Mailpit (email UI) | `http://localhost:8025` |
 | InfluxDB UI | `http://localhost:8086` |
 | MySQL | `localhost:3307` (root / password) |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3001` (iot-energy / password) |
 
 ### Upgrade & Teardown
 
 ```bash
 # After changing chart values:
 helm upgrade infra ./k8s/charts/infra-chart
+helm upgrade observability ./k8s/charts/observability-chart
 helm upgrade microservices ./k8s/charts/microservices-chart
 
 # Teardown:
 helm uninstall microservices
+helm uninstall observability
 helm uninstall infra
 minikube stop
 ```
@@ -219,14 +236,52 @@ observability/
   └── tempo/            # tempo.yaml — OTLP receivers, local storage
 k8s/
   ├── charts/infra-chart/          # MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, Ollama
+  ├── charts/observability-chart/  # Prometheus, Grafana, Loki, Promtail, Tempo
   └── charts/microservices-chart/  # All 6 microservices + shared ConfigMap/Secret/Ingress
 docker-compose.yml                 # Core application stack
 docker-compose.observability.yml   # Prometheus, Grafana, Loki, Promtail, Tempo
 ```
 
+## CI/CD
+
+### Pipeline Overview
+
+On every push to `main`, a GitHub Actions workflow (`.github/workflows/ci.yaml`) detects which services changed and builds only those — avoiding full rebuilds on every commit.
+
+```
+push to main
+    │
+    ▼
+detect-changes          ← dorny/paths-filter scans services/**
+    │                      normalizes paths → unique service directories
+    ▼
+build-and-push          ← matrix job, one runner per changed service (parallel)
+    │  configure AWS credentials
+    │  login to Amazon ECR Public
+    │  docker build <service>/
+    │  docker push public.ecr.aws/<alias>/energy-tracker/<service>:latest
+    ▼
+ECR Public registry     ← image available at :latest tag
+```
+
+### Deploying Updated Images to Kubernetes
+
+After new images are pushed, apply them to the cluster with:
+
+```bash
+helm upgrade microservices ./k8s/charts/microservices-chart
+```
+
+Kubernetes will pull the updated `:latest` images from ECR and perform a rolling restart of the affected deployments.
+
+### Automated Code Review
+
+Every pull request opened against `main` triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against the project's `CLAUDE.md` conventions and posts inline feedback on the PR. Reviewers can also mention `@claude` in any PR comment to request a targeted review.
+
+---
+
 ## Extensions (in progress)
 - **Frontend**: Next.js dashboard to manage devices, trigger simulation, and view insights.
-- **Observability (K8s)**: Migrate the observability stack into a dedicated `k8s/charts/observability-chart/` Helm chart.
 - **Redis** caching layer and queue for AI inference requests.
 - **MySQL read replicas** for query scalability.
 - **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.

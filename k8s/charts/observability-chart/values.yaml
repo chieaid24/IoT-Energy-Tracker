@@ -3,3 +3,15 @@ global:
 
 prometheus:
   enabled: true
+
+grafana:
+  enabled: true
+
+loki:
+  enabled: true
+
+promtail:
+  enabled: true
+
+tempo:
+  enabled: true
