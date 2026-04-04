@@ -1,7 +1,9 @@
 package com.chieaid24.ingestion_service.service;
 
 import com.chieaid24.ingestion_service.dto.EnergyUsageDto;
+import com.chieaid24.ingestion_service.dto.ShellyStatusDto;
 import com.chieaid24.kafka.event.EnergyUsageEvent;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -25,5 +27,17 @@ public class IngestionService {
 
     kafkaTemplate.send("energy-usage", event);
     // log.info("Ingested energy usage event: {}", event);
+  }
+
+  public void ingestShellyUsage(Long deviceId, ShellyStatusDto shellyStatus) {
+    EnergyUsageEvent event =
+        EnergyUsageEvent.builder()
+            .deviceId(deviceId)
+            .energyConsumed(shellyStatus.apower())
+            .timestamp(Instant.now())
+            .build();
+
+    kafkaTemplate.send("energy-usage", event);
+    log.info("Ingested Shelly energy usage event: {}", event);
   }
 }
