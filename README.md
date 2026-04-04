@@ -3,7 +3,7 @@
 > Java Spring Boot microservice-based architecture to handle 500k+ users and 2.5m+ devices. Aggregates energy usage, analyzes + stores time-series IoT data, and produces AI-generated efficiency insights.
 
 ## System Design
-<img width="6288" height="4516" alt="IoT Telemetry System Design4" src="https://github.com/user-attachments/assets/74640047-1b3c-47b9-98df-3fb663cf7181" />
+<img width="6288" height="4516" alt="IoT Telemetry System Design" src="https://github.com/user-attachments/assets/74640047-1b3c-47b9-98df-3fb663cf7181" />
 
 ## Tools / Frameworks Used
 | Category | Tools |
