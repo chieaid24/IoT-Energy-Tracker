@@ -19,9 +19,9 @@ spec:
             - containerPort: 3000
           env:
             - name: GF_SECURITY_ADMIN_USER
-              value: admin
+              value: iot-energy
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: admin
+              value: password
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "false"
           volumeMounts:

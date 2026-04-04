@@ -90,7 +90,7 @@ Spring Boot Services
 | Service | Port |
 |---|---|
 | Prometheus | `localhost:9090` |
-| Grafana | `localhost:3001` (admin / admin) |
+| Grafana | `localhost:3001` (iot-energy / password) |
 | Loki | `localhost:3100` |
 | Tempo | `localhost:3200` |
 
@@ -193,7 +193,7 @@ This exposes LoadBalancer services and the ingress to `localhost`.
 | InfluxDB UI | `http://localhost:8086` |
 | MySQL | `localhost:3307` (root / password) |
 | Prometheus | `http://localhost:9090` |
-| Grafana | `http://localhost:3001` (admin / admin) |
+| Grafana | `http://localhost:3001` (iot-energy / password) |
 
 ### Upgrade & Teardown
 
