@@ -5,10 +5,16 @@
 ## System Design
 <img width="6288" height="4516" alt="IoT Telemetry System Design" src="https://github.com/user-attachments/assets/74640047-1b3c-47b9-98df-3fb663cf7181" />
 
+## Grafana Observability
+
+| JVM Metrics | Service Health Overview |
+|---|---|
+| <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/fb54b941-55de-4d19-b0a1-071e29329a60" /> | <img alt="Grafana Service Health Overview" src="https://github.com/user-attachments/assets/bd373f3f-f867-47af-905a-bcafced74dfa" /> |
+
 ## Tools / Frameworks Used
 | Category | Tools |
 | --- | --- |
-| Language / Frameworks | Java 21 (Maven), Spring Boot 4.0.1 / 3.5.9, Spring Actuator, Spring AI 1.1.2 |
+| Language / Frameworks | Java 21 (Maven), Spring Boot, Spring Actuator, Spring AI |
 | Database | MySQL, InfluxDB, Flyway |
 | Messaging | Apache Kafka |
 | AI Inference | Ollama (gemma3:4b) |
