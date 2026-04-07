@@ -3,6 +3,7 @@ package com.chieaid24.ingestion_service.controller;
 import com.chieaid24.ingestion_service.dto.EnergyUsageDto;
 import com.chieaid24.ingestion_service.dto.ShellyStatusDto;
 import com.chieaid24.ingestion_service.service.IngestionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/ingestion")
 public class IngestionController {
@@ -31,6 +33,8 @@ public class IngestionController {
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
   public void ingestShellyData(
       @PathVariable Long deviceId, @RequestBody ShellyStatusDto shellyStatus) {
+    log.info("Received Shelly data for deviceId={}: {}", deviceId, shellyStatus);
     ingestionService.ingestShellyUsage(deviceId, shellyStatus);
+    log.info("Successfully processed Shelly data for deviceId={}", deviceId);
   }
 }

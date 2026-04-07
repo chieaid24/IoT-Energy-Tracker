@@ -30,14 +30,26 @@ public class IngestionService {
   }
 
   public void ingestShellyUsage(Long deviceId, ShellyStatusDto shellyStatus) {
+    double power = shellyStatus.apower() != null ? shellyStatus.apower() : 0.0;
+
     EnergyUsageEvent event =
         EnergyUsageEvent.builder()
             .deviceId(deviceId)
-            .energyConsumed(shellyStatus.apower())
+            .energyConsumed(power)
             .timestamp(Instant.now())
             .build();
 
-    kafkaTemplate.send("energy-usage", event);
+    kafkaTemplate
+        .send("energy-usage", event)
+        .whenComplete(
+            (result, ex) -> {
+              if (ex != null) {
+                log.error(
+                    "Failed to send Shelly event to Kafka for deviceId={}: {}",
+                    deviceId,
+                    ex.getMessage());
+              }
+            });
     log.info("Ingested Shelly energy usage event: {}", event);
   }
 }
