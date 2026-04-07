@@ -125,6 +125,28 @@ docker compose down
 docker compose -f docker-compose.observability.yml down
 ```
 
+### Service URLs
+
+Ports are consistent across Docker Compose and Kubernetes (via `minikube tunnel`).
+
+| Service | URL |
+|---|---|
+| user-service | `http://localhost:8080` |
+| device-service | `http://localhost:8081` |
+| ingestion-service | `http://localhost:8082` |
+| usage-service | `http://localhost:8083` |
+| alert-service | `http://localhost:8084` |
+| insight-service | `http://localhost:8085` |
+| Microservices API (K8s ingress) | `http://localhost/api/v1/...` |
+| Kafka UI | `http://localhost:8070` |
+| InfluxDB UI | `http://localhost:8072` |
+| Mailpit (email UI) | `http://localhost:8025` |
+| MySQL | `localhost:3307` (root / password) |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3001` (iot-energy / password) |
+| Loki | `http://localhost:3100` |
+| Tempo | `http://localhost:3200` |
+
 ## Run With Kubernetes (Minikube)
 
 > Requires: [Minikube](https://minikube.sigs.k8s.io/docs/start/), [Helm](https://helm.sh/docs/intro/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/), and an NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed.
@@ -188,18 +210,6 @@ minikube tunnel
 ```
 
 This exposes LoadBalancer services and the ingress to `localhost`.
-
-### Service URLs
-
-| Service | URL |
-|---|---|
-| Microservices API (via ingress) | `http://localhost/api/v1/...` |
-| Kafka UI | `http://localhost:8070` |
-| Mailpit (email UI) | `http://localhost:8025` |
-| InfluxDB UI | `http://localhost:8086` |
-| MySQL | `localhost:3307` (root / password) |
-| Prometheus | `http://localhost:9090` |
-| Grafana | `http://localhost:3001` (iot-energy / password) |
 
 ### Upgrade & Teardown
 

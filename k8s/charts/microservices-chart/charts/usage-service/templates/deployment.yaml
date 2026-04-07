@@ -50,10 +50,10 @@ spec:
           INTERVAL=5
           ELAPSED=0
 
-          echo "Waiting for InfluxDB at infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local:8086"
+          echo "Waiting for InfluxDB at infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local:8072"
 
           while [ $ELAPSED -lt $TIMEOUT ]; do
-            if nc -z infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local 8086; then
+            if nc -z infra-influxdb.{{ .Values.global.namespace }}.svc.cluster.local 8072; then
               echo "InfluxDB is ready!"
               exit 0
             fi

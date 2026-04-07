@@ -69,7 +69,7 @@ influxdb:
     size: 10Gi
   service:
     type: LoadBalancer
-    port: 8086
+    port: 8072
   resources:
     requests:
       memory: "256Mi"
