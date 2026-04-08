@@ -294,6 +294,10 @@ Kubernetes will pull the updated `:latest` images from ECR and perform a rolling
 
 Every pull request opened against `main` triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against the project's `CLAUDE.md` conventions and posts inline feedback on the PR. Reviewers can also mention `@claude` in any PR comment to request a targeted review.
 
+## Real Usage
+
+I connected the system to my own home using Shelly smartplugs. Check out the `/shelly` folder for how you can do it too!
+
 ---
 
 ## Extensions (in progress)

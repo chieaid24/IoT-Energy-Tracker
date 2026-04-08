@@ -165,6 +165,8 @@ services:
       MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo:4318/v1/traces"
       MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
       LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
+      JWT_SECRET: "iot-energy-tracker-jwt-secret-key-change-in-production-min-256-bits"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
     depends_on:
       mysql:
         condition: service_healthy
@@ -304,6 +306,22 @@ services:
       - usage-service
       - ollama
 
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_TRUST_HOST: "true"
+      AUTH_URL: http://localhost
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:-iot-energy-tracker-nextauth-secret-change-in-prod}"
+      BACKEND_URL: http://user-service:8080
+      NEXT_PUBLIC_API_URL: ""
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+    depends_on:
+      - user-service
+
   nginx:
     image: nginx:alpine
     container_name: nginx
@@ -318,6 +336,7 @@ services:
       - usage-service
       - alert-service
       - insight-service
+      - frontend
 
 volumes:
   db-data:
