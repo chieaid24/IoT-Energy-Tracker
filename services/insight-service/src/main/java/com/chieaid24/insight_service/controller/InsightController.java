@@ -27,7 +27,8 @@ public class InsightController {
 
   // get usage data from the last X days and return AI powered insights
   @GetMapping("/overview/{userId}")
-  public ResponseEntity<InsightDto> getOverview(@PathVariable Long userId, @RequestParam(defaultValue = "3") int days) {
+  public ResponseEntity<InsightDto> getOverview(
+      @PathVariable Long userId, @RequestParam(defaultValue = "3") int days) {
     InsightDto insightDto = insightService.getOverview(userId, days);
     return ResponseEntity.ok(insightDto);
   }

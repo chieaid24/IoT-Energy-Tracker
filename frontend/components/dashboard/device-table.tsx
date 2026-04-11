@@ -20,6 +20,8 @@ interface Device {
   energyConsumed: number;
 }
 
+const POLL_INTERVAL = 5000;
+
 export function DeviceTable({ userId }: { userId: string }) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +42,12 @@ export function DeviceTable({ userId }: { userId: string }) {
     }
 
     fetchData();
+    const intervalId = setInterval(fetchData, POLL_INTERVAL);
+    return () => clearInterval(intervalId);
   }, [userId]);
 
   return (
-    <Card>
+    <Card className="animate-card-enter" style={{ animationDelay: "200ms" }}>
       <CardHeader>
         <CardTitle>Devices</CardTitle>
       </CardHeader>
@@ -62,16 +66,16 @@ export function DeviceTable({ userId }: { userId: string }) {
                 <TableHead className="text-right">Energy (kWh)</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="stagger-children">
               {devices.map((device) => (
-                <TableRow key={device.id}>
+                <TableRow key={device.id} className="animate-fade-up">
                   <TableCell className="font-medium">{device.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{device.type}</Badge>
                   </TableCell>
                   <TableCell>{device.location}</TableCell>
                   <TableCell className="text-right">
-                    {device.energyConsumed?.toFixed(2) || "0.00"}
+                    {((device.energyConsumed || 0) / 1000).toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}

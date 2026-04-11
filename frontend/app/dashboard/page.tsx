@@ -6,6 +6,7 @@ import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { EnergyChart } from "@/components/dashboard/energy-chart";
 import { DeviceTable } from "@/components/dashboard/device-table";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
+import { InfluxDBPanel } from "@/components/dashboard/influxdb-panel";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -26,12 +27,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="animate-fade-up text-2xl font-bold tracking-tight">Dashboard</h1>
       <SummaryCards userId={userId} />
       <div className="grid gap-6 lg:grid-cols-2">
         <EnergyChart userId={userId} />
         <InsightsPanel userId={userId} />
       </div>
+      <InfluxDBPanel />
       <DeviceTable userId={userId} />
     </div>
   );

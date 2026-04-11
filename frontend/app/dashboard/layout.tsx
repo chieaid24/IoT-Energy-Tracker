@@ -15,14 +15,16 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+      <header className="border-b border-border/60 bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <span className="text-lg font-semibold">IoT Energy Tracker</span>
+            <span className="text-lg font-semibold tracking-tight">
+              <span className="text-primary">IoT</span> Energy Tracker
+            </span>
             <nav className="flex gap-4">
               <Link
                 href="/dashboard"
-                className={`text-sm ${
+                className={`text-sm transition-colors duration-150 ${
                   pathname === "/dashboard"
                     ? "text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -32,7 +34,7 @@ export default function DashboardLayout({
               </Link>
               <Link
                 href="/dashboard/devices"
-                className={`text-sm ${
+                className={`text-sm transition-colors duration-150 ${
                   pathname === "/dashboard/devices"
                     ? "text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -50,6 +52,7 @@ export default function DashboardLayout({
               variant="outline"
               size="sm"
               onClick={() => signOut({ callbackUrl: "/login" })}
+              className="cursor-pointer"
             >
               Sign out
             </Button>

@@ -42,12 +42,18 @@ public class AuthService {
       throw new IllegalArgumentException("Email already registered");
     }
 
+    boolean alerting = request.getAlerting() != null ? request.getAlerting() : true;
+    double threshold =
+        request.getEnergyAlertingThreshold() != null ? request.getEnergyAlertingThreshold() : 10.0;
+
     User user =
         User.builder()
             .name(request.getName())
             .surname(request.getSurname())
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
+            .alerting(alerting)
+            .energyAlertingThreshold(threshold)
             .authProvider("LOCAL")
             .build();
 
@@ -94,7 +100,13 @@ public class AuthService {
             .orElseGet(
                 () -> {
                   User newUser =
-                      User.builder().name(name).email(email).authProvider("GOOGLE").build();
+                      User.builder()
+                          .name(name)
+                          .email(email)
+                          .alerting(true)
+                          .energyAlertingThreshold(10.0)
+                          .authProvider("GOOGLE")
+                          .build();
                   return userRepository.save(newUser);
                 });
 

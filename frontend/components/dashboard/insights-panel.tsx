@@ -36,12 +36,15 @@ export function InsightsPanel({ userId }: { userId: string }) {
   }, [userId]);
 
   return (
-    <Card>
+    <Card
+      className="animate-card-enter card-accent-border"
+      style={{ animationDelay: "150ms" }}
+    >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           AI Insights
           {insight && (
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="bg-primary/10 text-primary">
               {insight.confidence}% confidence
             </Badge>
           )}

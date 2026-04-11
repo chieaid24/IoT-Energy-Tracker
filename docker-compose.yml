@@ -307,8 +307,12 @@ services:
       - ollama
 
   frontend:
-    build:
-      context: ./frontend
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
     ports:
       - "3000:3000"
     environment:
@@ -342,6 +346,7 @@ volumes:
   db-data:
   kafka-data:
   ollama-data:
+  frontend-node-modules:
 
 networks:
   default:

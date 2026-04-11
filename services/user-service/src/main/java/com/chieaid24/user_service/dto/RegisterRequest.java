@@ -14,4 +14,6 @@ public class RegisterRequest {
   private String surname;
   private String email;
   private String password;
+  private Boolean alerting;
+  private Double energyAlertingThreshold;
 }
