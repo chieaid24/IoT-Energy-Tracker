@@ -10,27 +10,25 @@ import org.springframework.stereotype.Service;
 public class AlertService {
 
   private final EmailService emailService;
+  private final EcoEmailBuilder ecoEmailBuilder;
 
-  public AlertService(EmailService emailService) {
+  public AlertService(EmailService emailService, EcoEmailBuilder ecoEmailBuilder) {
     this.emailService = emailService;
+    this.ecoEmailBuilder = ecoEmailBuilder;
   }
 
-  // TODO: prettify the content, and add more info like device details, timestamp, etc
-  // also handle failures and retries
   @KafkaListener(topics = "energy-alerts", groupId = "alert-service")
   public void energyUsageAlertEvent(AlertingEvent alertingEvent) {
     log.info("Received alerting event: {}", alertingEvent);
-    // Process the alerting event (e.g., send notification, log to database, etc.)
-    final String subject = "Energy Usage Alert for User " + alertingEvent.getUserId();
-    final String message =
-        "Alert: "
-            + alertingEvent.getMessage()
-            + "\n"
-            + "Threshold: "
-            + alertingEvent.getThreshold()
-            + "\n"
-            + "Energy Consumed: "
-            + alertingEvent.getEnergyConsumed();
-    emailService.sendEmail(alertingEvent.getEmail(), subject, message, alertingEvent.getUserId());
+
+    final String subject = "Energy Usage Alert for " + alertingEvent.getName();
+    final String htmlBody =
+        ecoEmailBuilder.buildHtmlEmail(
+            alertingEvent.getMessage(),
+            alertingEvent.getThreshold(),
+            alertingEvent.getEnergyConsumed());
+
+    emailService.sendHtmlEmail(
+        alertingEvent.getEmail(), subject, htmlBody, alertingEvent.getUserId());
   }
 }

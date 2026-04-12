@@ -79,7 +79,7 @@ public class UserService {
               .email("dummy" + i + "@example.com")
               .address("Dummy Address " + i)
               .alerting(true)
-              .energyAlertingThreshold(10.0 + (i * 10)) // test values for now
+              .energyAlertingThreshold(20000) 
               .password(passwordEncoder.encode("password"))
               .authProvider("LOCAL")
               .build();

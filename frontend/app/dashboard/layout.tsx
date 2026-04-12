@@ -42,6 +42,16 @@ export default function DashboardLayout({
               >
                 Devices
               </Link>
+              <Link
+                href="/dashboard/alerts"
+                className={`text-sm transition-colors duration-150 ${
+                  pathname === "/dashboard/alerts"
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Alerts
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
@@ -60,6 +70,39 @@ export default function DashboardLayout({
         </div>
       </header>
       <main className="mx-auto max-w-7xl p-4">{children}</main>
+      <footer className="border-t border-border/60 bg-card/80 backdrop-blur-sm mt-auto">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} Aidan Chien. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://www.linkedin.com/in/aidanchien/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+            >
+              LinkedIn
+            </a>
+            <a
+              href="https://github.com/chieaid24"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://aidanchien.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+            >
+              Website
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

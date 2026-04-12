@@ -60,6 +60,7 @@ export function DeviceTable({ userId }: { userId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Status</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Location</TableHead>
@@ -69,6 +70,12 @@ export function DeviceTable({ userId }: { userId: string }) {
             <TableBody className="stagger-children">
               {devices.map((device) => (
                 <TableRow key={device.id} className="animate-fade-up">
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">
+                      <span className="status-dot size-1.5 rounded-full bg-green-500" />
+                      Online
+                    </span>
+                  </TableCell>
                   <TableCell className="font-medium">{device.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{device.type}</Badge>

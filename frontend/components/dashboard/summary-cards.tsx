@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Cpu, Zap, Bell } from "lucide-react";
 import {
   Card,
@@ -23,6 +24,7 @@ export function SummaryCards({ userId }: { userId: string }) {
   const [data, setData] = useState<SummaryData | null>(null);
   const [bellRinging, setBellRinging] = useState(false);
   const prevAlertCount = useRef<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchEnergyAndDevices() {
@@ -103,7 +105,7 @@ export function SummaryCards({ userId }: { userId: string }) {
       value: `${(data.totalEnergy / 1000).toFixed(2)} kWh`,
       icon: Zap,
     },
-    { title: "Alerts", value: data.alertCount, icon: Bell },
+    { title: "Alerts", value: data.alertCount, icon: Bell, href: "/dashboard/alerts" },
   ];
 
   return (
@@ -115,10 +117,9 @@ export function SummaryCards({ userId }: { userId: string }) {
             key={card.title}
             className={cn(
               "animate-card-enter",
-              card.title === "Alerts" && data.alertCount > 0
-                ? ""
-                : ""
+              card.href && "cursor-pointer transition-colors hover:bg-muted/50"
             )}
+            onClick={card.href ? () => router.push(card.href) : undefined}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">

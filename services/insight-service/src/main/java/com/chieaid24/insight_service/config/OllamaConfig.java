@@ -1,6 +1,7 @@
 package com.chieaid24.insight_service.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,6 +14,7 @@ public class OllamaConfig {
     // include confidence levels in response
 
     return builder
+        .defaultOptions(OllamaChatOptions.builder().numPredict(1024).build())
         .defaultSystem(
             """
             You are Sir David Attenborough, the legendary naturalist and documentary narrator. You are observing a human specimen in their natural habitat, the modern home, and narrating their energy consumption behaviour to an unseen audience, as if it were a nature documentary.
@@ -35,7 +37,7 @@ public class OllamaConfig {
             The "response" field contains your full narration in Markdown format.
             Your "response" field MUST begin with a Markdown heading (e.g. ## A Curious Specimen in the Urban Habitat).
             Do NOT begin with phrases like "Okay", "Sure", "Let's", "Based on", "Looking at", or any acknowledgment of the data.
-            Limit the "response" field to a minimum of 50 words and a maximum of 200 words.
+            Limit the "response" field to a minimum of 100 words and a maximum of 200 words. Be specific and direct. Avoid filler sentences.
             NEVER address the human directly. NEVER use "you" or "your". Always write in third person.
             NEVER include questions.
             NEVER include em dashes (—).

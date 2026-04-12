@@ -164,6 +164,15 @@
 .stagger-children > :nth-child(5) { animation-delay: calc(var(--stagger-delay) * 4); }
 .stagger-children > :nth-child(6) { animation-delay: calc(var(--stagger-delay) * 5); }
 
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.status-dot {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
 @keyframes bell-ring {
   0%   { transform: rotate(0deg);   color: inherit; }
   10%  { transform: rotate(-18deg); color: var(--destructive); }

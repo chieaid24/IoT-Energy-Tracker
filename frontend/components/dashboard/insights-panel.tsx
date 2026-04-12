@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface Insight {
   tips: string;
@@ -16,24 +19,42 @@ export function InsightsPanel({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(`/api/v1/insight/overview/${userId}?days=7`);
-        if (res.ok) {
-          setInsight(await res.json());
-        } else {
-          setError(true);
-        }
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const storageKey = `ai-insight-${userId}`;
 
-    fetchData();
-  }, [userId]);
+  const fetchInsight = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch(`/api/v1/insight/overview/${userId}?days=7`);
+      if (res.ok) {
+        const data = await res.json();
+        setInsight(data);
+        localStorage.setItem(storageKey, JSON.stringify(data));
+      } else {
+        setError(true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, storageKey]);
+
+  useEffect(() => {
+    const cached = localStorage.getItem(storageKey);
+    if (cached) {
+      setInsight(JSON.parse(cached));
+      setLoading(false);
+    } else {
+      fetchInsight();
+    }
+  }, [storageKey, fetchInsight]);
+
+  const handleRegenerate = () => {
+    localStorage.removeItem(storageKey);
+    setInsight(null);
+    fetchInsight();
+  };
 
   return (
     <Card
@@ -42,12 +63,28 @@ export function InsightsPanel({ userId }: { userId: string }) {
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          AI Insights
-          {insight && (
+          <div className="flex items-center gap-2">
+            AI Insights
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleRegenerate}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={cn("size-3.5", loading && "animate-spin")}
+              />
+            </Button>
+          </div>
+          {loading && !insight ? (
+            <Badge variant="secondary" className="bg-muted text-muted-foreground animate-pulse">
+              Regenerating...
+            </Badge>
+          ) : insight ? (
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               {insight.confidence}% confidence
             </Badge>
-          )}
+          ) : null}
         </CardTitle>
       </CardHeader>
       <CardContent>
