@@ -6,7 +6,7 @@ import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { EnergyChart } from "@/components/dashboard/energy-chart";
 import { DeviceTable } from "@/components/dashboard/device-table";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
-import { InfluxDBPanel } from "@/components/dashboard/influxdb-panel";
+
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -33,7 +33,6 @@ export default function DashboardPage() {
         <EnergyChart userId={userId} />
         <InsightsPanel userId={userId} />
       </div>
-      <InfluxDBPanel />
       <DeviceTable userId={userId} />
     </div>
   );

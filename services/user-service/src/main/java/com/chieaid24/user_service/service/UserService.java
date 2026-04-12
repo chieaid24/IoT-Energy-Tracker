@@ -5,6 +5,7 @@ import com.chieaid24.user_service.entity.User;
 import com.chieaid24.user_service.repository.UserRepository;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -12,9 +13,11 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
-  public UserService(UserRepository userRepository) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
+    this.passwordEncoder = passwordEncoder;
   }
 
   public UserDto createUser(UserDto input) {
@@ -26,6 +29,8 @@ public class UserService {
             .address(input.getAddress())
             .alerting(input.isAlerting())
             .energyAlertingThreshold(input.getEnergyAlertingThreshold())
+            .password(passwordEncoder.encode(input.getPassword()))
+            .authProvider("LOCAL")
             .build();
     User saved = userRepository.save(createdUser);
     return toDto(saved);
@@ -73,8 +78,10 @@ public class UserService {
               .surname("Surname " + i)
               .email("dummy" + i + "@example.com")
               .address("Dummy Address " + i)
-              .alerting(i % 2 == 0)
+              .alerting(true)
               .energyAlertingThreshold(10.0 + (i * 10)) // test values for now
+              .password(passwordEncoder.encode("password"))
+              .authProvider("LOCAL")
               .build();
       userRepository.save(dummyUser);
     }

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InfluxDBPanel } from "@/components/dashboard/influxdb-panel";
 
 interface Device {
   id: number;
@@ -47,6 +48,7 @@ export default function DevicesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Devices</h1>
+      <InfluxDBPanel />
       <Card>
         <CardHeader>
           <CardTitle>All Devices</CardTitle>
