@@ -10,7 +10,7 @@ import { InsightsPanel } from "@/components/dashboard/insights-panel";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-
+  //
   if (status === "loading") {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
