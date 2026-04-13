@@ -64,7 +64,7 @@ export function EnergyChart({ userId }: { userId: string }) {
       <CardHeader>
         <CardTitle>Energy Consumption by Device (7 days)</CardTitle>
       </CardHeader>
-      <CardContent className="min-h-0 flex-1 pr-10 pt-2">
+      <CardContent className="min-h-100 flex-1 pr-10 pt-2">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-muted-foreground">Loading...</p>
