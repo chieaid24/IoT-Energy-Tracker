@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Device {
   id: number;
@@ -20,11 +21,53 @@ interface Device {
   energyConsumed: number;
 }
 
+type SortKey = "name" | "type" | "location" | "energyConsumed";
+type SortDirection = "asc" | "desc";
+
 const POLL_INTERVAL = 5000;
 
 export function DeviceTable({ userId }: { userId: string }) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  function handleSort(key: SortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDirection("asc");
+    } else {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    }
+  }
+
+  const sortedDevices = useMemo(() => {
+    if (!sortKey) return devices;
+    return [...devices].sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+  }, [devices, sortKey, sortDirection]);
+
+  function SortIcon({ column }: { column: SortKey }) {
+    const icon =
+      sortKey !== column ? (
+        <ArrowUpDown className="size-3.5 text-muted-foreground/50" />
+      ) : sortDirection === "asc" ? (
+        <ArrowUp className="size-3.5" />
+      ) : (
+        <ArrowDown className="size-3.5" />
+      );
+    return <span className="ml-1 inline-flex w-3.5 shrink-0 justify-center">{icon}</span>;
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -61,14 +104,22 @@ export function DeviceTable({ userId }: { userId: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Status</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead className="text-right">Energy (kWh)</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("name")}>
+                  <span className="inline-flex items-center">Name <SortIcon column="name" /></span>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("type")}>
+                  <span className="inline-flex items-center">Type <SortIcon column="type" /></span>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("location")}>
+                  <span className="inline-flex items-center">Location <SortIcon column="location" /></span>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort("energyConsumed")}>
+                  <span className="inline-flex items-center">Energy (kWh) <SortIcon column="energyConsumed" /></span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="stagger-children">
-              {devices.map((device) => (
+              {sortedDevices.map((device) => (
                 <TableRow key={device.id} className="animate-fade-up">
                   <TableCell>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">

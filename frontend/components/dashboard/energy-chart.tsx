@@ -60,23 +60,23 @@ export function EnergyChart({ userId }: { userId: string }) {
   }));
 
   return (
-    <Card className="animate-card-enter" style={{ animationDelay: "100ms" }}>
+    <Card className="flex animate-card-enter flex-col" style={{ animationDelay: "100ms" }}>
       <CardHeader>
         <CardTitle>Energy Consumption by Device (7 days)</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-0 flex-1 pr-10 pt-2">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <p className="text-muted-foreground">Loading...</p>
           </div>
         ) : chartData.length === 0 ? (
-          <div className="flex h-64 items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <p className="text-muted-foreground">
               No energy data available
             </p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
               <XAxis
