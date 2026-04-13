@@ -10,5 +10,6 @@ public enum DeviceType {
   HEATER,
   REFRIGERATOR,
   AIR_CONDITIONER,
-  TV
+  TV,
+  MISC
 }

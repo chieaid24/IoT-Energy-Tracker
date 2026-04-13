@@ -1,0 +1,3 @@
+ALTER TABLE `user`
+    ADD COLUMN `password` VARCHAR(255) NULL,
+    ADD COLUMN `auth_provider` VARCHAR(20) NOT NULL DEFAULT 'LOCAL';

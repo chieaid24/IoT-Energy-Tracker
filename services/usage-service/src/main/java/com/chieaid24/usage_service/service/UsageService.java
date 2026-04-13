@@ -133,6 +133,7 @@ public class UsageService {
     List<Long> userIds = new ArrayList<>(userDeviceEnergyMap.keySet());
     final Map<Long, Double> userThresholdMap = new HashMap<>();
     final Map<Long, String> userEmailMap = new HashMap<>();
+    final Map<Long, String> userNameMap = new HashMap<>();
 
     for (final Long userId : userIds) {
       try {
@@ -143,6 +144,7 @@ public class UsageService {
         }
         userThresholdMap.put(userId, user.energyAlertingThreshold());
         userEmailMap.put(userId, user.email());
+        userNameMap.put(userId, user.name());
       } catch (Exception e) {
         log.error("Error fetching user data for ID: {}", userId, e);
       }
@@ -160,6 +162,7 @@ public class UsageService {
 
       if (totalEnergyConsumed > threshold) {
         final String userEmail = userEmailMap.get(userId);
+        final String userName = userNameMap.get(userId);
         log.warn(
             "WARNING: User ID {} has exceeded the energy consumption threshold! Total Consumed: {}, Threshold: {}, Email: {}",
             userId,
@@ -170,6 +173,7 @@ public class UsageService {
         final AlertingEvent alertingEvent =
             AlertingEvent.builder()
                 .userId(userId)
+                .name(userName)
                 .message("Energy consumption exceeded threshold")
                 .threshold(threshold)
                 .energyConsumed(totalEnergyConsumed)
