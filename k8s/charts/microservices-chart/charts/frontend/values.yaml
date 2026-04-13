@@ -1,0 +1,15 @@
+image:
+  repository: public.ecr.aws/v6r1m8q2/energy-tracker/frontend
+  tag: latest
+  pullPolicy: Always
+
+port: 3000
+replicas: 1
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "250m"

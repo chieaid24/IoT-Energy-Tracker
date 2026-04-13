@@ -65,4 +65,13 @@ spec:
             port:
               number: {{ .Values.insightService.port }}
       {{- end }}
+      {{- if .Values.frontend.enabled }}
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-frontend
+            port:
+              number: {{ .Values.frontend.port }}
+      {{- end }}
 {{- end }}

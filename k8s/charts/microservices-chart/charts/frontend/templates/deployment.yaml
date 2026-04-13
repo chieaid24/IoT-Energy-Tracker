@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: frontend
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      initContainers:
+      - name: wait-for-user-service
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          TIMEOUT=120
+          INTERVAL=5
+          ELAPSED=0
+
+          echo "Waiting for user-service at {{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if wget -q --spider http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080/actuator/health; then
+              echo "user-service is ready!"
+              exit 0
+            fi
+            echo "user-service not ready yet... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "ERROR: Timeout waiting for user-service after ${TIMEOUT} seconds"
+          exit 1
+      containers:
+      - name: frontend
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: http
+        env:
+        - name: AUTH_TRUST_HOST
+          value: "true"
+        - name: AUTH_URL
+          value: "http://localhost"
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-frontend-secret
+              key: NEXTAUTH_SECRET
+        - name: BACKEND_URL
+          value: "http://{{ .Release.Name }}-user-service.{{ .Values.global.namespace }}.svc.cluster.local:8080"
+        - name: NEXT_PUBLIC_API_URL
+          value: ""
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-frontend-secret
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-frontend-secret
+              key: GOOGLE_CLIENT_SECRET
+        resources:
+          requests:
+            memory: {{ .Values.resources.requests.memory }}
+            cpu: {{ .Values.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.resources.limits.memory }}
+            cpu: {{ .Values.resources.limits.cpu }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.port }}
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3

@@ -17,5 +17,8 @@ dependencies:
 - name: insight-service
   repository: ""
   version: 0.1.0
-digest: sha256:1872fd65a16df32585f804996cde604607054215c6bb15ff24383e2b29cec592
-generated: "2026-02-27T21:41:54.612366909-05:00"
+- name: frontend
+  repository: ""
+  version: 0.1.0
+digest: sha256:99cb74ab7a3fcd169f5b27018f5076ba34bb5dae9b514dd845d54d97c02a5492
+generated: "2026-04-12T21:34:47.593449597-04:00"
