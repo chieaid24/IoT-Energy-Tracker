@@ -44,7 +44,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -64,15 +64,64 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
-        # Build the FRONTEND container and push the image to ECR
         SERVICE_NAME=${{ vars.NAMESPACE }}/$(basename ${{ matrix.service }})
         IMAGE_URI=$ECR_REGISTRY/${{ vars.PUBLIC_REGISTRY_ALIAS }}/$SERVICE_NAME
         IMAGE_TAG=latest
-        
+
         docker build -t $IMAGE_URI:$IMAGE_TAG ${{ matrix.service }}
         echo "Pushing image to ECR..."
         docker push $IMAGE_URI:$IMAGE_TAG
-        # echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "image=$IMAGE_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  detect-frontend-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
+  build-and-push-frontend:
+    name: Build and Push Frontend
+    needs: detect-frontend-changes
+    if: needs.detect-frontend-changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Login to Amazon ECR Public
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      with:
+        registry-type: public
+        mask-password: true
+
+    - name: Build, tag, and push the image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        IMAGE_URI=$ECR_REGISTRY/${{ vars.PUBLIC_REGISTRY_ALIAS }}/${{ vars.NAMESPACE }}/frontend
+        IMAGE_TAG=latest
+
+        docker build -t $IMAGE_URI:$IMAGE_TAG frontend
+        echo "Pushing image to ECR..."
+        docker push $IMAGE_URI:$IMAGE_TAG
         echo "image=$IMAGE_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
 
