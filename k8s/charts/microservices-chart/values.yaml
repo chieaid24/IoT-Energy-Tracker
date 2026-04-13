@@ -15,6 +15,9 @@ global:
   influx:
     token: my-token
 
+  jwt:
+    secret: "my-super-secret-jwt-key-that-is-at-least-32-bytes-long"
+
 # User Service Configuration
 userService:
   enabled: true
