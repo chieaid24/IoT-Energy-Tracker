@@ -100,6 +100,37 @@ Spring Boot Services
 | Loki | `localhost:3100` |
 | Tempo | `localhost:3200` |
 
+## Frontend
+
+Next.js 16 dashboard (App Router, TypeScript, Tailwind CSS v4, shadcn/ui) served through nginx reverse proxy.
+
+### Authentication & Security
+
+- **Google OAuth 2.0** via NextAuth.js — Google ID tokens are forwarded to `user-service /api/v1/auth/google`, which validates them against Google's `tokeninfo` endpoint and verifies audience (`aud`) claim against the configured client ID. New users are auto-provisioned on first Google sign-in.
+- **Credentials login** — email/password verified against BCrypt-hashed passwords in MySQL. Passwords are never stored in plaintext.
+- **JWT session strategy** — on successful login (either provider), user-service issues an HMAC-SHA signed JWT (24h expiry) containing `userId`, `email`, and `name`. NextAuth stores this token server-side in an encrypted session cookie and attaches it as a `Bearer` token on all backend API calls via a server-side `fetchApi` helper.
+- **Route protection** — NextAuth middleware redirects unauthenticated users to `/login` for all `/dashboard/*` routes. Client-side `useSession` provides an additional guard.
+- **Stateless backend** — Spring Security configured with `SessionCreationPolicy.STATELESS` and CSRF disabled (API-only, no browser session cookies).
+
+### Pages
+
+| Route | Description |
+|---|---|
+| `/login` | Email/password + Google OAuth sign-in |
+| `/register` | Account registration (auto-signs in on success) |
+| `/dashboard` | Summary cards, energy bar chart (Recharts), AI insights panel |
+| `/dashboard/devices` | Device table, embedded InfluxDB explorer |
+| `/dashboard/alerts` | Embedded Mailpit inbox for email alerts |
+
+### Dashboard Components
+
+- **Summary Cards** — device count, 7-day energy consumption (kWh), and alert count with animated bell on new alerts. Energy/device data polls every 5s, alerts poll every 1s.
+- **Energy Chart** — per-device 7-day energy consumption bar chart via Recharts, polling usage-service every 5s.
+- **AI Insights Panel** — Ollama-generated energy efficiency tips with confidence score, cached in localStorage, with manual regenerate button.
+- **Device Table** — lists all user devices with type badges.
+- **InfluxDB Explorer** — embedded InfluxDB UI iframe for direct time-series data exploration.
+- **Mailpit Inbox** — embedded Mailpit iframe showing alert emails sent by alert-service.
+
 ## Run With Docker
 
 > Requires an NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed for Ollama GPU acceleration.
@@ -301,7 +332,6 @@ I connected the system to my own home using Shelly smartplugs. Check out the `/s
 ---
 
 ## Extensions (in progress)
-- **Frontend**: Next.js dashboard to manage devices, trigger simulation, and view insights.
 - **Redis** caching layer and queue for AI inference requests.
 - **MySQL read replicas** for query scalability.
 - **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.
