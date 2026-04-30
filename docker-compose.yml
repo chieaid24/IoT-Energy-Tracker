@@ -229,8 +229,6 @@ services:
   usage-service:
     build:
       context: ./services/usage-service
-    ports:
-      - "8083:8083"
     environment:
       SPRING_APPLICATION_NAME: usage-service
       SERVER_PORT: 8083
