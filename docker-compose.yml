@@ -15,8 +15,31 @@ services:
     ports:
       - "3307:3306"
     volumes:
+      - ./docker/mysql/source.cnf:/etc/mysql/conf.d/source.cnf:ro
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db-data:/var/lib/mysql
+
+  mysql-replica:
+    image: mysql:8.3.0
+    container_name: mysql-replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./docker/mysql/replica.cnf:/etc/mysql/conf.d/replica.cnf:ro
+      - ./docker/mysql/replica-init.sql:/docker-entrypoint-initdb.d/replica-init.sql:ro
+      - db-data-replica:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   kafka:
     container_name: kafka
@@ -353,6 +376,7 @@ services:
 
 volumes:
   db-data:
+  db-data-replica:
   kafka-data:
   ollama-data:
   frontend-node-modules:

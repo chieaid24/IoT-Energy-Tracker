@@ -27,6 +27,16 @@ App-side: `LazyConnectionDataSourceProxy → AbstractRoutingDataSource → {prim
 
 ---
 
+## Execution Decisions (agreed with user, 2026-04-30)
+
+- **Branch:** stay on `redis-k8s`. Do not branch off `main`. The in-flight Redis WIP (Chart.yaml/values.yaml/configmap-global.yaml + redis subchart + redis.md) coexists with this work.
+- **Pacing:** stop after each phase. Run the phase's validation, hand the user a copy-paste validation block they can run themselves, and wait for explicit approval before starting the next phase.
+- **Destructive ops:** OK to `docker compose down -v` and wipe Compose volumes when a clean re-init is needed. OK to `kubectl delete pvc` on infra MySQL when needed in Phase 2.
+- **Validation execution:** Claude runs the validation commands itself, then echoes the same commands back to the user so they can re-verify. Do not skip the manual handoff.
+- **Secrets:** keep the hardcoded dev pattern — replication user `replicator` / password `replicator-pass`, matching the existing `password` / `my-token` style. No env-var parameterization for the replication password in this PR.
+
+---
+
 ## Phase 0 — Per-service Spring config (do this first; deploy the infra in Phase 1/2 against unchanged apps, then ship the app changes)
 
 Order matters: stand the replica up first. Apps keep working unchanged because the new env vars are optional; only after replication is verified do we ship the routing code.
