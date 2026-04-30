@@ -15,6 +15,7 @@ import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -45,16 +47,19 @@ public class UsageService {
   private String influxOrg;
 
   private final KafkaTemplate<String, AlertingEvent> kafkaTemplate;
+  private final StringRedisTemplate stringRedisTemplate;
 
   public UsageService(
       InfluxDBClient influxDBClient,
       DeviceClient deviceClient,
       UserClient userClient,
-      KafkaTemplate<String, AlertingEvent> kafkaTemplate) {
+      KafkaTemplate<String, AlertingEvent> kafkaTemplate,
+      StringRedisTemplate stringRedisTemplate) {
     this.influxDBClient = influxDBClient;
     this.deviceClient = deviceClient;
     this.userClient = userClient;
     this.kafkaTemplate = kafkaTemplate;
+    this.stringRedisTemplate = stringRedisTemplate;
   }
 
   @KafkaListener(topics = "energy-usage", groupId = "usage-service")
@@ -70,6 +75,12 @@ public class UsageService {
 
   @Scheduled(cron = "*/10 * * * * *")
   public void aggregateDeviceEnergyUsage() {
+    Boolean lockAcquired =
+        stringRedisTemplate
+            .opsForValue()
+            .setIfAbsent("aggregation-lock", "1", Duration.ofSeconds(10));
+    if (!Boolean.TRUE.equals(lockAcquired)) return;
+
     final Instant now = Instant.now();
     final Instant oneHourAgo = now.minusSeconds(3600); // aggregate data from the last 10 minutes
 
