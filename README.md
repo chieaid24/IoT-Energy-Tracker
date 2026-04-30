@@ -16,6 +16,7 @@
 | --- | --- |
 | Language / Frameworks | Java 21 (Maven), Spring Boot, Spring Actuator, Spring AI |
 | Database | MySQL, InfluxDB, Flyway |
+| Caching | Redis |
 | Messaging | Apache Kafka |
 | AI Inference | Ollama (gemma3:4b) |
 | Observability | Prometheus, Grafana, Loki, Promtail, Tempo (OpenTelemetry) |
@@ -26,6 +27,7 @@
 ## Technical Highlights
 - Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting across three topics.
 - **Dual persistence model**: MySQL for relational data (users, devices, alerts) and InfluxDB for time-series usage analytics.
+- **Redis caching layer**: usage-service caches InfluxDB query results in Redis (2-minute TTL) and uses a distributed `SETNX` lock on the 10-second aggregation scheduler, ensuring only one replica hits InfluxDB per tick regardless of how many instances are running.
 - **AI-powered insights** via Spring AI + Ollama (gemma3:4b), polling usage aggregates on a cron schedule to generate efficiency recommendations.
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
 - **Full observability stack**: distributed tracing (OTLP → Tempo), structured log aggregation (ECS JSON → Promtail → Loki), and Prometheus metrics — all correlated in Grafana.
@@ -36,6 +38,8 @@
 
 ```
 ingestion-service  →  [Kafka: energy-usage]  →  usage-service  →  InfluxDB
+                                                      ↓                ↑
+                                                    Redis  ─(miss)─────┘
                                                       ↓
                                              [Kafka: energy-alerts]
                                                       ↓
@@ -51,7 +55,7 @@ insight-service  →  (polls usage-service REST)  →  Ollama (gemma3:4b)  →  
 | user-service | 8080 | MySQL | Flyway migrations, LoggingAspect, ExecutionTimeAspect |
 | device-service | 8081 | MySQL | Inter-service calls to user-service |
 | ingestion-service | 8082 | — | Kafka producer, multi-threaded event simulator |
-| usage-service | 8083 | InfluxDB | Kafka consumer, emits alert events |
+| usage-service | 8083 | InfluxDB, Redis | Kafka consumer, Redis read cache + scheduler lock, emits alert events |
 | alert-service | 8084 | MySQL | Kafka consumer, Spring Mail via Mailpit |
 | insight-service | 8085 | — | Spring AI + Ollama, polls usage-service |
 
@@ -165,7 +169,7 @@ Ports are consistent across Docker Compose and Kubernetes (via `minikube tunnel`
 | user-service | `http://localhost:8080` |
 | device-service | `http://localhost:8081` |
 | ingestion-service | `http://localhost:8082` |
-| usage-service | `http://localhost:8083` |
+| usage-service | `http://localhost/api/v1/usage` (via nginx) |
 | alert-service | `http://localhost:8084` |
 | insight-service | `http://localhost:8085` |
 | Microservices API (K8s ingress) | `http://localhost/api/v1/...` |
@@ -332,6 +336,6 @@ I connected the system to my own home using Shelly smartplugs. Check out the `/s
 ---
 
 ## Extensions (in progress)
-- **Redis** caching layer and queue for AI inference requests.
+- **Redis queue** for AI inference requests (rate-limiting and request queuing for Ollama).
 - **MySQL read replicas** for query scalability.
 - **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.
