@@ -2,11 +2,12 @@ package com.chieaid24.usage_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-// Usage Service
 @SpringBootApplication
 @EnableScheduling
+@EnableCaching
 public class UsageServiceApplication {
 
   public static void main(String[] args) {

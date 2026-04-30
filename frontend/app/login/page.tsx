@@ -70,7 +70,7 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full cursor-pointer"
               onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             >
               Sign in with Google

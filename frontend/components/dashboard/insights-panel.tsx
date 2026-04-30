@@ -58,7 +58,7 @@ export function InsightsPanel({ userId }: { userId: string }) {
 
   return (
     <Card
-      className="animate-card-enter card-accent-border"
+      className="animate-card-enter"
       style={{ animationDelay: "150ms" }}
     >
       <CardHeader>
@@ -92,7 +92,7 @@ export function InsightsPanel({ userId }: { userId: string }) {
           <p className="text-muted-foreground">Generating insights...</p>
         ) : error ? (
           <p className="text-muted-foreground">
-            AI insights unavailable — Ollama may be offline
+            AI insights unavailable - Ollama may be offline
           </p>
         ) : insight ? (
           <div className="prose prose-sm dark:prose-invert max-w-none">

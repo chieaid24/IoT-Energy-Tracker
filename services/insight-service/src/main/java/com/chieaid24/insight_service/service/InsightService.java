@@ -5,9 +5,9 @@ import com.chieaid24.insight_service.dto.AiInsightResponse;
 import com.chieaid24.insight_service.dto.DeviceDto;
 import com.chieaid24.insight_service.dto.InsightDto;
 import com.chieaid24.insight_service.dto.UsageDto;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class InsightService {
 
-  private static final Pattern CONFIDENCE_PATTERN =
-      Pattern.compile("\"confidence\"\\s*:\\s*(\\d+)");
-  private static final Pattern RESPONSE_PATTERN =
-      Pattern.compile("\"response\"\\s*:\\s*\"(.*?)\"\\s*\\}", Pattern.DOTALL);
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private final UsageClient usageClient;
   private final ChatClient chatClient;
@@ -80,24 +77,26 @@ public class InsightService {
       // JSON
       String jsonResponse =
           rawResponse.replaceAll("(?s)```(?:json)?\\s*(\\{.*\\})\\s*```", "$1").trim();
-      log.info(
-          "Cleaned JSON for userId {} (length={}): [{}]",
-          userId,
-          jsonResponse.length(),
-          jsonResponse);
 
-      Matcher confidenceMatcher = CONFIDENCE_PATTERN.matcher(jsonResponse);
-      Matcher responseMatcher = RESPONSE_PATTERN.matcher(jsonResponse);
+      // Normalize smart/curly quotes to ASCII — Ollama models sometimes emit these
+      String normalized =
+          jsonResponse
+              .replace('\u201C', '"')
+              .replace('\u201D', '"')
+              .replace('\u2018', '\'')
+              .replace('\u2019', '\'');
 
-      if (confidenceMatcher.find() && responseMatcher.find()) {
-        int confidence = Integer.parseInt(confidenceMatcher.group(1));
-        String response = responseMatcher.group(1).replace("\\n", "\n").replace("\\\"", "\"");
+      try {
+        JsonNode root = objectMapper.readTree(normalized);
+        int confidence = root.path("confidence").asInt(0);
+        String response = root.path("response").asText("");
         aiResponse = new AiInsightResponse(confidence, response);
-      } else {
+      } catch (Exception e) {
         log.warn(
-            "Failed to extract fields from Ollama response on attempt {} for userId {}",
+            "Failed to parse Ollama JSON on attempt {} for userId {}: {}",
             attempt,
-            userId);
+            userId,
+            e.getMessage());
         aiResponse = new AiInsightResponse(0, jsonResponse);
       }
 
