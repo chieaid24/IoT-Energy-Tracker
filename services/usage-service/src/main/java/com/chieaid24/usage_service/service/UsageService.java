@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -190,6 +191,7 @@ public class UsageService {
     }
   }
 
+  @Cacheable(value = "usage", key = "#userId + ':' + #days")
   public UsageDto getXDaysUsageForUser(Long userId, int days) {
     log.info("Getting usage for userId: {} over past {} days", userId, days);
     final List<DeviceDto> devicesDto = deviceClient.getAllDevicesForUser(userId);
