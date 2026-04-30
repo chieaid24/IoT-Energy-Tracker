@@ -4,9 +4,12 @@ metadata:
   name: {{ .Release.Name }}-global-config
   namespace: {{ .Values.global.namespace }}
 data:
-  # MySQL connection
+  # MySQL connection — primary (writes)
   SPRING_DATASOURCE_URL: "jdbc:mysql://{{ .Values.global.mysql.host }}.{{ .Values.global.namespace }}.svc.cluster.local:{{ .Values.global.mysql.port }}/{{ .Values.global.mysql.database }}"
   SPRING_DATASOURCE_USERNAME: {{ .Values.global.mysql.username }}
+
+  # MySQL connection — read replica (reads). Apps fall back to primary creds when replica creds are blank.
+  SPRING_DATASOURCE_REPLICA_URL: "jdbc:mysql://{{ .Values.global.mysql.replicaHost }}.{{ .Values.global.namespace }}.svc.cluster.local:{{ .Values.global.mysql.replicaPort }}/{{ .Values.global.mysql.database }}"
 
   # Kafka
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "infra-kafka.{{ .Values.global.namespace }}.svc.cluster.local:9092"

@@ -13,6 +13,7 @@ mysql:
   auth:
     rootPassword: password
     database: energy_tracker
+    replicationPassword: replicator-pass
 
   persistence:
     enabled: false
@@ -29,6 +30,19 @@ mysql:
     limits:
       memory: "512Mi"
       cpu: "500m"
+
+  replica:
+    enabled: true
+    service:
+      type: ClusterIP
+      port: 3306
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
 
 kafka:
   enabled: true

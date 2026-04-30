@@ -8,6 +8,8 @@ global:
   mysql:
     host: infra-mysql  # ie the name of the release must be "infra"
     port: 3307
+    replicaHost: infra-mysql-replica  # internal ClusterIP service for read replica
+    replicaPort: 3306
     database: energy_tracker
     username: root
     password: password

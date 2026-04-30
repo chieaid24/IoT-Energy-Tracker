@@ -5,3 +5,33 @@ metadata:
 data:
   init.sql: |
     CREATE DATABASE IF NOT EXISTS {{ .Values.auth.database }};
+    CREATE USER IF NOT EXISTS 'replicator'@'%' IDENTIFIED WITH mysql_native_password BY '{{ .Values.auth.replicationPassword }}';
+    GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'%';
+    FLUSH PRIVILEGES;
+
+  source.cnf: |
+    [mysqld]
+    server-id=1
+    log-bin=mysql-bin
+    binlog_format=ROW
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+
+  replica.cnf: |
+    [mysqld]
+    server-id=2
+    relay-log=mysql-relay-bin
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+
+  replica-init.sql: |
+    CHANGE REPLICATION SOURCE TO
+      SOURCE_HOST='{{ .Release.Name }}-mysql-0.{{ .Release.Name }}-mysql-headless.{{ .Release.Namespace }}.svc.cluster.local',
+      SOURCE_PORT=3306,
+      SOURCE_USER='replicator',
+      SOURCE_PASSWORD='{{ .Values.auth.replicationPassword }}',
+      SOURCE_AUTO_POSITION=1,
+      GET_SOURCE_PUBLIC_KEY=1;
+    START REPLICA;
+    SET PERSIST read_only = ON;
+    SET PERSIST super_read_only = ON;

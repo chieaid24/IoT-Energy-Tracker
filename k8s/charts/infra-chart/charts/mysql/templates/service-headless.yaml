@@ -10,9 +10,10 @@ spec:
     targetPort: 3306
   selector:
     app: mysql
+    role: primary
 
 ---
-# Regular service (for connecting)
+# Regular service (for connecting to the primary / writes)
 apiVersion: v1
 kind: Service
 metadata:
@@ -27,3 +28,4 @@ spec:
     {{- end }}
   selector:
     app: mysql
+    role: primary

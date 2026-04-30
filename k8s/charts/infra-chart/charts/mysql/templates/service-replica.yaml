@@ -1,0 +1,30 @@
+{{- if .Values.replica.enabled }}
+# Headless service for replica StatefulSet DNS
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql-replica-headless
+spec:
+  clusterIP: None
+  ports:
+  - port: {{ .Values.replica.service.port }}
+    targetPort: 3306
+  selector:
+    app: mysql
+    role: replica
+
+---
+# Read-only replica service (internal cluster access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql-replica
+spec:
+  type: {{ .Values.replica.service.type }}
+  ports:
+  - port: {{ .Values.replica.service.port }}
+    targetPort: 3306
+  selector:
+    app: mysql
+    role: replica
+{{- end }}
