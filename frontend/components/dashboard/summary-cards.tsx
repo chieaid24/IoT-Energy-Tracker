@@ -2,13 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Cpu, Zap, Bell } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Bell } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface SummaryData {
@@ -86,11 +81,10 @@ export function SummaryCards({ userId }: { userId: string }) {
       <div className="grid gap-4 sm:grid-cols-3 stagger-children">
         {[...Array(3)].map((_, i) => (
           <Card key={i} className="animate-card-enter">
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Loading...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+            <CardContent className="pt-6">
+              <div className="h-3 w-28 animate-pulse rounded bg-muted" />
+              <div className="mt-3 h-9 w-16 animate-pulse rounded bg-muted" />
+              <div className="mt-2 h-3 w-20 animate-pulse rounded bg-muted" />
             </CardContent>
           </Card>
         ))}
@@ -98,50 +92,93 @@ export function SummaryCards({ userId }: { userId: string }) {
     );
   }
 
-  const cards = [
-    { title: "Your Devices", value: data.totalDevices, icon: Cpu },
-    {
-      title: "Energy (7d)",
-      value: `${(data.totalEnergy / 1000).toFixed(2)} kWh`,
-      icon: Zap,
-    },
-    { title: "Alerts", value: data.alertCount, icon: Bell, href: "/dashboard/alerts" },
-  ];
+  const energyKwh = (data.totalEnergy / 1000).toFixed(2);
+  const hasAlerts = data.alertCount > 0;
 
   return (
     <div className="grid gap-4 sm:grid-cols-3 stagger-children">
-      {cards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <Card
-            key={card.title}
-            role={card.href ? "button" : undefined}
-            tabIndex={card.href ? 0 : undefined}
-            aria-label={card.href ? `${card.title}: ${card.value}. Go to alerts.` : undefined}
-            className={cn(
-              "animate-card-enter",
-              card.href && "cursor-pointer transition-colors hover:bg-muted/50"
-            )}
-            onClick={card.href ? () => router.push(card.href) : undefined}
-            onKeyDown={card.href ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                router.push(card.href!);
-              }
-            } : undefined}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Icon className={cn("size-4", card.title === "Alerts" && bellRinging && "bell-ring")} />
-                {card.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold tracking-tight">{card.value}</p>
-            </CardContent>
-          </Card>
-        );
-      })}
+
+      {/* Devices — quiet, architectural */}
+      <Card className="animate-card-enter">
+        <CardContent className="pt-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Connected Devices
+          </p>
+          <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight">
+            {data.totalDevices}
+          </p>
+          <p className="mt-1.5 text-xs text-muted-foreground">in your home</p>
+        </CardContent>
+      </Card>
+
+      {/* Energy — number + unit split, data-forward */}
+      <Card className="animate-card-enter" style={{ animationDelay: "50ms" }}>
+        <CardContent className="pt-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Energy Used
+          </p>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <p className="text-4xl font-bold tabular-nums tracking-tight">{energyKwh}</p>
+            <span className="text-sm font-medium text-muted-foreground">kWh</span>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">past 7 days</p>
+        </CardContent>
+      </Card>
+
+      {/* Alerts — state-driven, navigable */}
+      <Card
+        role="button"
+        tabIndex={0}
+        aria-label={
+          hasAlerts
+            ? `${data.alertCount} active ${data.alertCount === 1 ? "alert" : "alerts"}. Go to alerts.`
+            : "No active alerts. Go to alerts."
+        }
+        className={cn(
+          "animate-card-enter cursor-pointer transition-colors hover:bg-muted/50",
+          hasAlerts && "border-destructive/25"
+        )}
+        style={{ animationDelay: "100ms" }}
+        onClick={() => router.push("/dashboard/alerts")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push("/dashboard/alerts");
+          }
+        }}
+      >
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <p className={cn(
+              "text-xs font-medium uppercase tracking-widest",
+              hasAlerts ? "text-destructive/70" : "text-muted-foreground"
+            )}>
+              Alerts
+            </p>
+            <Bell className={cn(
+              "size-3.5",
+              bellRinging && "bell-ring",
+              hasAlerts ? "text-destructive" : "text-muted-foreground"
+            )} />
+          </div>
+          {hasAlerts ? (
+            <>
+              <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight text-destructive">
+                {data.alertCount}
+              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                active {data.alertCount === 1 ? "alert" : "alerts"}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-2xl font-medium text-muted-foreground">All clear</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">no active alerts</p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
