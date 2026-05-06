@@ -70,6 +70,7 @@ export function InsightsPanel({ userId }: { userId: string }) {
               size="icon-xs"
               onClick={handleRegenerate}
               disabled={loading}
+              aria-label="Regenerate insights"
             >
               <RefreshCw
                 className={cn("size-3.5", loading && "animate-spin")}

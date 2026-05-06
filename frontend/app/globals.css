@@ -239,3 +239,17 @@
     @apply font-sans;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-enter,
+  .animate-fade-up,
+  .stagger-children > * {
+    animation: none;
+  }
+  .status-dot {
+    animation: none;
+  }
+  .bell-ring {
+    animation: none !important;
+  }
+}

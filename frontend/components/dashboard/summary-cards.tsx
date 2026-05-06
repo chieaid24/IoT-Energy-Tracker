@@ -115,11 +115,20 @@ export function SummaryCards({ userId }: { userId: string }) {
         return (
           <Card
             key={card.title}
+            role={card.href ? "button" : undefined}
+            tabIndex={card.href ? 0 : undefined}
+            aria-label={card.href ? `${card.title}: ${card.value}. Go to alerts.` : undefined}
             className={cn(
               "animate-card-enter",
               card.href && "cursor-pointer transition-colors hover:bg-muted/50"
             )}
             onClick={card.href ? () => router.push(card.href) : undefined}
+            onKeyDown={card.href ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                router.push(card.href!);
+              }
+            } : undefined}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
