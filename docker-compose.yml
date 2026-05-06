@@ -189,6 +189,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/energy_tracker
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_REPLICA_URL: jdbc:mysql://mysql-replica:3306/energy_tracker
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
       MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
