@@ -23,7 +23,11 @@ const ALERT_POLL_INTERVAL = 1000;
 export function SummaryCards({ userId }: { userId: string }) {
   const [data, setData] = useState<SummaryData | null>(null);
   const [bellRinging, setBellRinging] = useState(false);
+  const [energyPulsing, setEnergyPulsing] = useState(false);
+  const [devicesPulsing, setDevicesPulsing] = useState(false);
   const prevAlertCount = useRef<number | null>(null);
+  const prevEnergy = useRef<number | null>(null);
+  const prevDevices = useRef<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +52,18 @@ export function SummaryCards({ userId }: { userId: string }) {
         const devices = await devicesRes.value.json();
         totalDevices = devices.length;
       }
+
+      if (prevEnergy.current !== null && totalEnergy > prevEnergy.current) {
+        setEnergyPulsing(true);
+        setTimeout(() => setEnergyPulsing(false), 600);
+      }
+      prevEnergy.current = totalEnergy;
+
+      if (prevDevices.current !== null && totalDevices > prevDevices.current) {
+        setDevicesPulsing(true);
+        setTimeout(() => setDevicesPulsing(false), 800);
+      }
+      prevDevices.current = totalDevices;
 
       setData((prev) => ({ alertCount: prev?.alertCount ?? 0, totalDevices, totalEnergy }));
     }
@@ -132,7 +148,14 @@ export function SummaryCards({ userId }: { userId: string }) {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Icon className={cn("size-4", card.title === "Alerts" && bellRinging && "bell-ring")} />
+                <Icon
+                  className={cn(
+                    "size-4",
+                    card.title === "Alerts" && bellRinging && "bell-ring",
+                    card.title === "Energy (7d)" && energyPulsing && "pulse-yellow",
+                    card.title === "Your Devices" && devicesPulsing && "pulse-blue"
+                  )}
+                />
                 {card.title}
               </CardTitle>
             </CardHeader>

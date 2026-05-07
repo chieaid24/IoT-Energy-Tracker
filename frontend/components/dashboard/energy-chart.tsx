@@ -77,12 +77,16 @@ export function EnergyChart({ userId }: { userId: string }) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 32, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
               <XAxis
                 dataKey="name"
                 className="text-xs"
                 tick={{ fill: "var(--muted-foreground)" }}
+                interval={0}
+                angle={-30}
+                textAnchor="end"
+                height={56}
               />
               <YAxis
                 className="text-xs"
@@ -103,6 +107,7 @@ export function EnergyChart({ userId }: { userId: string }) {
                   fontSize: "0.8125rem",
                 }}
                 cursor={{ fill: "var(--muted)", opacity: 0.4 }}
+                formatter={(value: number) => [`${value} kWh`, "Energy"]}
               />
               <Bar dataKey="energy" radius={[6, 6, 0, 0]} />
             </BarChart>

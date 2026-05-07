@@ -29,7 +29,7 @@ export default function DashboardLayout({
             <div className="flex min-w-0 items-center gap-6">
               <Link
                 href="/dashboard"
-                className="shrink-0 text-base font-semibold tracking-tight sm:text-lg"
+                className="font-display shrink-0 text-lg font-medium tracking-tight sm:text-xl"
               >
                 <span className="text-primary">IoT</span> Energy Tracker
               </Link>
