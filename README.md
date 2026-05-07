@@ -175,7 +175,7 @@ Ports are consistent across Docker Compose and Kubernetes (via `minikube tunnel`
 | insight-service | `http://localhost:8085` |
 | Microservices API (K8s ingress) | `http://localhost/api/v1/...` |
 | Kafka UI | `http://localhost:8070` |
-| InfluxDB UI | `http://localhost:8072` |
+| InfluxDB UI | `http://localhost:8072` (iot-energy / password) |
 | Mailpit (email UI) | `http://localhost:8025` |
 | MySQL (primary) | `localhost:3307` (root / password) |
 | MySQL (replica, read-only) | `localhost:3308` (root / password) |

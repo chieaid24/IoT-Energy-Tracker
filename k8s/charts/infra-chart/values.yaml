@@ -72,8 +72,8 @@ influxdb:
     tag: "2.7"
     pullPolicy: IfNotPresent
   auth:
-    username: admin
-    password: admin123
+    username: iot-energy
+    password: password
     org: chieaid24
     bucket: usage-bucket
     retention: 1w

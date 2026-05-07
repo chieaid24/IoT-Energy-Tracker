@@ -65,33 +65,49 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="register-first-name" className="sr-only">First name</label>
+                <Input
+                  id="register-first-name"
+                  placeholder="First name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="register-last-name" className="sr-only">Last name</label>
+                <Input
+                  id="register-last-name"
+                  placeholder="Last name"
+                  value={surname}
+                  onChange={(e) => setSurname(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="register-email" className="sr-only">Email</label>
               <Input
-                placeholder="First name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="register-email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+            <div>
+              <label htmlFor="register-password" className="sr-only">Password</label>
               <Input
-                placeholder="Last name"
-                value={surname}
-                onChange={(e) => setSurname(e.target.value)}
+                id="register-password"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
               />
             </div>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}

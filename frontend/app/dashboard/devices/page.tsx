@@ -46,8 +46,7 @@ export default function DevicesPage() {
   }, [userId]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Devices</h1>
+    <div className="space-y-4 sm:space-y-6">
       <InfluxDBPanel />
       <Card>
         <CardHeader>
@@ -59,28 +58,37 @@ export default function DevicesPage() {
           ) : devices.length === 0 ? (
             <p className="text-muted-foreground">No devices registered</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Location</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {devices.map((device) => (
-                  <TableRow key={device.id}>
-                    <TableCell>{device.id}</TableCell>
-                    <TableCell className="font-medium">{device.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{device.type}</Badge>
-                    </TableCell>
-                    <TableCell>{device.location}</TableCell>
+            <div className="-mx-2 overflow-x-auto sm:mx-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="hidden sm:table-cell">ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden md:table-cell">Location</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {devices.map((device) => (
+                    <TableRow key={device.id}>
+                      <TableCell className="hidden tabular-nums sm:table-cell">
+                        {device.id}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {device.name}
+                        <span className="mt-0.5 block text-xs text-muted-foreground md:hidden">
+                          {device.location}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{device.type}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{device.location}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
