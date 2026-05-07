@@ -107,7 +107,7 @@ export function EnergyChart({ userId }: { userId: string }) {
                   fontSize: "0.8125rem",
                 }}
                 cursor={{ fill: "var(--muted)", opacity: 0.4 }}
-                formatter={(value: number) => [`${value} kWh`, "Energy"]}
+                formatter={(value) => [`${value as number} kWh`, "Energy"]}
               />
               <Bar dataKey="energy" radius={[6, 6, 0, 0]} />
             </BarChart>
