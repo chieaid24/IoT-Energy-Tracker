@@ -100,45 +100,57 @@ export function DeviceTable({ userId }: { userId: string }) {
         ) : devices.length === 0 ? (
           <p className="text-muted-foreground">No devices found</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("name")}>
-                  <span className="inline-flex items-center">Name <SortIcon column="name" /></span>
-                </TableHead>
-                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("type")}>
-                  <span className="inline-flex items-center">Type <SortIcon column="type" /></span>
-                </TableHead>
-                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("location")}>
-                  <span className="inline-flex items-center">Location <SortIcon column="location" /></span>
-                </TableHead>
-                <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort("energyConsumed")}>
-                  <span className="inline-flex items-center">Energy (kWh) <SortIcon column="energyConsumed" /></span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="stagger-children">
-              {sortedDevices.map((device) => (
-                <TableRow key={device.id} className="animate-fade-up">
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">
-                      <span className="status-dot size-1.5 rounded-full bg-green-500" />
-                      Online
+          <div className="-mx-2 overflow-x-auto sm:mx-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => handleSort("name")}>
+                    <span className="inline-flex items-center">Name <SortIcon column="name" /></span>
+                  </TableHead>
+                  <TableHead className="hidden cursor-pointer select-none sm:table-cell" onClick={() => handleSort("type")}>
+                    <span className="inline-flex items-center">Type <SortIcon column="type" /></span>
+                  </TableHead>
+                  <TableHead className="hidden cursor-pointer select-none md:table-cell" onClick={() => handleSort("location")}>
+                    <span className="inline-flex items-center">Location <SortIcon column="location" /></span>
+                  </TableHead>
+                  <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort("energyConsumed")}>
+                    <span className="inline-flex items-center">
+                      <span className="sm:hidden">kWh</span>
+                      <span className="hidden sm:inline">Energy (kWh)</span>
+                      <SortIcon column="energyConsumed" />
                     </span>
-                  </TableCell>
-                  <TableCell className="font-medium">{device.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{device.type}</Badge>
-                  </TableCell>
-                  <TableCell>{device.location}</TableCell>
-                  <TableCell className="text-right">
-                    {((device.energyConsumed || 0) / 1000).toFixed(2)}
-                  </TableCell>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody className="stagger-children">
+                {sortedDevices.map((device) => (
+                  <TableRow key={device.id} className="animate-fade-up">
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">
+                        <span className="status-dot size-1.5 rounded-full bg-green-500" />
+                        <span className="hidden sm:inline">Online</span>
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {device.name}
+                      <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
+                        {device.type}
+                        {device.location ? ` · ${device.location}` : ""}
+                      </span>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="secondary">{device.type}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{device.location}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {((device.energyConsumed || 0) / 1000).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

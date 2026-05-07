@@ -8,7 +8,7 @@ export default function AlertsPage() {
       <CardContent className="p-0">
         <iframe
           src="http://localhost:8025"
-          className="block h-[1000px] w-full border-0"
+          className="block h-[calc(100dvh-12rem)] min-h-[480px] w-full border-0 sm:h-[calc(100dvh-10rem)] lg:h-[1000px]"
           title="Mailpit"
           tabIndex={-1}
           loading="lazy"

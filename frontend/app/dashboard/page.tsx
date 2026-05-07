@@ -26,10 +26,12 @@ export default function DashboardPage() {
   const userId = (session as any)?.userId || "1";
 
   return (
-    <div className="space-y-6">
-      <h1 className="animate-fade-up text-2xl font-bold tracking-tight">Dashboard</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="animate-fade-up text-2xl font-bold tracking-tight sm:text-3xl">
+        Dashboard
+      </h1>
       <SummaryCards userId={userId} />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <EnergyChart userId={userId} />
         <InsightsPanel userId={userId} />
       </div>

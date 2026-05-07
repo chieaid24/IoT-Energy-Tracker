@@ -67,13 +67,14 @@ export function InsightsPanel({ userId }: { userId: string }) {
             AI Insights
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={handleRegenerate}
               disabled={loading}
               aria-label="Regenerate insights"
+              className="size-9 sm:size-7"
             >
               <RefreshCw
-                className={cn("size-3.5", loading && "animate-spin")}
+                className={cn("size-4 sm:size-3.5", loading && "animate-spin")}
               />
             </Button>
           </div>
