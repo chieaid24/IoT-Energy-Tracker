@@ -27,6 +27,7 @@
 ## Technical Highlights
 - Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting across three topics.
 - **Dual persistence model**: MySQL for relational data (users, devices, alerts) and InfluxDB for time-series usage analytics.
+- **MySQL primary + read replica** with async GTID row-based replication (`super_read_only=ON` on the replica). `user-service`, `device-service`, and `alert-service` route reads to the replica via Spring's `AbstractRoutingDataSource` keyed off `@Transactional(readOnly=true)`, with separate Hikari pools (`primary` size 8, `replica` size 4) and a `LazyConnectionDataSourceProxy` so the routing key resolves after the transaction flag is set. Flyway is pinned to the primary pool.
 - **Redis caching layer**: usage-service caches InfluxDB query results in Redis (2-minute TTL) and uses a distributed `SETNX` lock on the 10-second aggregation scheduler, ensuring only one replica hits InfluxDB per tick regardless of how many instances are running.
 - **AI-powered insights** via Spring AI + Ollama (gemma3:4b), polling usage aggregates on a cron schedule to generate efficiency recommendations.
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
@@ -52,11 +53,11 @@ insight-service  →  (polls usage-service REST)  →  Ollama (gemma3:4b)  →  
 
 | Service | Port | Persistence | Notes |
 |---|---|---|---|
-| user-service | 8080 | MySQL | Flyway migrations, LoggingAspect, ExecutionTimeAspect |
-| device-service | 8081 | MySQL | Inter-service calls to user-service |
+| user-service | 8080 | MySQL (primary + replica) | Flyway migrations, LoggingAspect, ExecutionTimeAspect, replica-routed reads |
+| device-service | 8081 | MySQL (primary + replica) | Inter-service calls to user-service, replica-routed reads |
 | ingestion-service | 8082 | — | Kafka producer, multi-threaded event simulator |
 | usage-service | 8083 | InfluxDB, Redis | Kafka consumer, Redis read cache + scheduler lock, emits alert events |
-| alert-service | 8084 | MySQL | Kafka consumer, Spring Mail via Mailpit |
+| alert-service | 8084 | MySQL (primary + replica) | Kafka consumer, Spring Mail via Mailpit, replica-routed reads |
 | insight-service | 8085 | — | Spring AI + Ollama, polls usage-service |
 
 ## Observability
@@ -176,7 +177,8 @@ Ports are consistent across Docker Compose and Kubernetes (via `minikube tunnel`
 | Kafka UI | `http://localhost:8070` |
 | InfluxDB UI | `http://localhost:8072` |
 | Mailpit (email UI) | `http://localhost:8025` |
-| MySQL | `localhost:3307` (root / password) |
+| MySQL (primary) | `localhost:3307` (root / password) |
+| MySQL (replica, read-only) | `localhost:3308` (root / password) |
 | Prometheus | `http://localhost:9090` |
 | Grafana | `http://localhost:3001` (iot-energy / password) |
 | Loki | `http://localhost:3100` |
@@ -204,7 +206,7 @@ minikube addons enable ingress
 helm install infra ./k8s/charts/infra-chart
 ```
 
-Deploys: MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, and Ollama (GPU-backed StatefulSet with PVC).
+Deploys: MySQL (primary + read replica StatefulSets, async GTID replication), Kafka, InfluxDB, Mailpit, Kafka UI, and Ollama (GPU-backed StatefulSet with PVC).
 
 Watch until all pods are running:
 ```bash
@@ -337,5 +339,4 @@ I connected the system to my own home using Shelly smartplugs. Check out the `/s
 
 ## Extensions (in progress)
 - **Redis queue** for AI inference requests (rate-limiting and request queuing for Ollama).
-- **MySQL read replicas** for query scalability.
 - **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.
