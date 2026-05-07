@@ -9,6 +9,7 @@ import com.chieaid24.device_service.model.DeviceType;
 import com.chieaid24.device_service.repository.DeviceRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DeviceService {
@@ -20,6 +21,7 @@ public class DeviceService {
     this.userClient = userClient;
   }
 
+  @Transactional(readOnly = true)
   public DeviceDto getDeviceById(Long id) {
     Device device =
         deviceRepository
@@ -67,6 +69,7 @@ public class DeviceService {
     deviceRepository.truncate();
   }
 
+  @Transactional(readOnly = true)
   public List<DeviceDto> getAllDevicesByUserId(Long userId) {
     List<Device> devices = deviceRepository.findAllByUserId(userId);
     return devices.stream().map(this::mapToDto).toList();
@@ -91,6 +94,7 @@ public class DeviceService {
     }
   }
 
+  @Transactional(readOnly = true)
   public Long getTotalDevices() {
     return deviceRepository.count();
   }

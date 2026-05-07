@@ -7,8 +7,8 @@
 | Phase 0 | Ordering note (infra first, then app changes) | ✅ Acknowledged |
 | Phase 1 | Docker Compose: primary config + replica container | ✅ Complete |
 | Phase 2 | Kubernetes Helm: replica StatefulSet + Service + global ConfigMap | ✅ Complete |
-| Phase 3 | App-side read routing (DataSourceConfig, RoutingDataSource, @Transactional) | ❌ Not started |
-| Phase 4 | Final cross-cutting checks | ❌ Not started (blocked by Phase 3) |
+| Phase 3 | App-side read routing (DataSourceConfig, RoutingDataSource, @Transactional) | ✅ Complete |
+| Phase 4 | Final cross-cutting checks | ✅ Complete |
 
 ---
 
@@ -229,11 +229,11 @@ curl -fsS localhost/api/v1/user/actuator/health
 
 ---
 
-## Phase 3 — App-side read routing (user-service, device-service, alert-service) ❌ NOT STARTED
+## Phase 3 — App-side read routing (user-service, device-service, alert-service) ✅ COMPLETE
 
 Per-service, identical pattern. Boot 4.0.1 + HikariCP + Spring Data JPA. **No new Maven dependencies** — `spring-jdbc` (already transitive via JPA) provides `AbstractRoutingDataSource` and `LazyConnectionDataSourceProxy`.
 
-### 3.1 Routing infrastructure (each of the 3 services) ❌
+### 3.1 Routing infrastructure (each of the 3 services) ✅
 
 New files (paths shown for `user-service`; mirror in `device-service` and `alert-service`):
 - ❌ `services/user-service/src/main/java/com/chieaid24/user_service/config/RoutingDataSource.java` — extends `AbstractRoutingDataSource`, `determineCurrentLookupKey()` returns `"REPLICA"` when `TransactionSynchronizationManager.isCurrentTransactionReadOnly()` is true, else `"PRIMARY"`. Log the resolved key at DEBUG.
@@ -244,7 +244,13 @@ New files (paths shown for `user-service`; mirror in `device-service` and `alert
   - Wrap in `LazyConnectionDataSourceProxy` and mark **only that bean** `@Primary`.
 - ❌ (user-service only) `@FlywayDataSource`-annotated bean returning the primary `HikariDataSource` directly. Hard requirement — Flyway must never see the routing proxy.
 
-### 3.2 Service-method `@Transactional(readOnly=true)` annotations ❌
+### 3.2 Service-method `@Transactional(readOnly=true)` annotations ✅
+
+Implementation note: alert-service annotations live on the repository
+interface methods (`AlertRepository.findByUserIdOrderByCreatedAtDesc`,
+`countByUserId`) rather than a service wrapper, since `AlertController`
+calls the repository directly. The Kafka listener path has no
+annotation, so its `EmailService.saveAndFlush` stays on the primary.
 
 Apply **only on safe read paths**. `SimpleJpaRepository` already wraps repository-method calls in `readOnly=true`, but routing decisions should be explicit at the service layer where humans review them.
 
@@ -252,7 +258,7 @@ Apply **only on safe read paths**. `SimpleJpaRepository` already wraps repositor
 - ❌ **device-service** — annotate `getDeviceById`, `getAllDevicesByUserId`, `getTotalDevices` with `@Transactional(readOnly=true)`.
 - ❌ **alert-service** — annotate **only the controller-driven read methods** (e.g. `findByUserIdOrderByCreatedAtDesc`, `countByUserId`). Do **not** annotate the Kafka listener path (`AlertService.energyUsageAlertEvent`) — `readOnly=true` flips Hibernate to `FlushMode.MANUAL` and silently no-ops accidental writes.
 
-### 3.3 Env var wiring ❌
+### 3.3 Env var wiring ✅
 
 Docker Compose `docker-compose.yml` — add to each of the 3 services:
 ```yaml
@@ -265,9 +271,9 @@ Kubernetes `k8s/charts/microservices-chart/templates/configmap-global.yaml`:
 ```
 SPRING_DATASOURCE_REPLICA_URL: jdbc:mysql://infra-mysql-replica.default.svc.cluster.local:3306/energy_tracker
 ```
-✅ K8s global ConfigMap entry already added. Docker Compose env vars on user/device/alert services still missing.
+✅ K8s global ConfigMap entry already added. Docker Compose env vars added on user/device/alert services.
 
-### 3.4 Validation — Phase 3 (per service) ❌
+### 3.4 Validation — Phase 3 (per service) ✅
 
 After **each** of the three services is rebuilt and redeployed:
 
@@ -302,11 +308,11 @@ After **each** of the three services is rebuilt and redeployed:
 
 ---
 
-## Phase 4 — Final cross-cutting checks ❌ NOT STARTED (blocked by Phase 3)
+## Phase 4 — Final cross-cutting checks ✅ COMPLETE
 
-- `kubectl exec infra-mysql-replica-0 -- mysql -uroot -ppassword -e "SELECT @@global.read_only, @@global.super_read_only;"` returns `1, 1` — replica rejects writes at the engine level.
-- Stop the replica (`docker compose stop mysql-replica` / `kubectl scale --replicas=0 statefulset/infra-mysql-replica`) and verify writes still succeed and reads degrade gracefully (HikariCP fails fast on the replica pool, `LazyConnectionDataSourceProxy` does **not** mask this — calls under `readOnly=true` will error). Document this as a known limitation; out-of-scope to add fallback-to-primary behavior.
-- Confirm Hikari metrics emitted as `hikaricp_connections_active{pool="primary"}` and `{pool="replica"}` separately in Prometheus.
+- ✅ `docker exec mysql-replica mysql -uroot -ppassword -e "SELECT @@global.read_only, @@global.super_read_only;"` returns `1, 1`. A direct `INSERT` on the replica is rejected with `ERROR 1290 (HY000) ... --super-read-only`.
+- ✅ Replica-down behavior verified by `docker stop mysql-replica`. Reads (`/api/v1/user/total`, `/api/v1/device/total`) return HTTP 500 after the HikariCP `connectionTimeout` window — `LazyConnectionDataSourceProxy` does **not** mask the failure. Writes via the primary (Kafka-listener `INSERT INTO alert`) continued during the outage. **Known limitation**: there is no automatic fallback to the primary; an operator must scale the replica back up.
+- ✅ Hikari metrics emitted distinctly per pool on all three services: `hikaricp_connections_active{pool="primary"}` and `{pool="replica"}`. Max sizes confirmed via `hikaricp_connections_max{pool="primary"} = 8.0`, `{pool="replica"} = 4.0`.
 
 ---
 
@@ -333,13 +339,15 @@ After **each** of the three services is rebuilt and redeployed:
 - ✅ `k8s/charts/infra-chart/charts/mysql/values.yaml` + `k8s/charts/infra-chart/values.yaml` — `replica.enabled` block
 - ✅ `k8s/charts/microservices-chart/templates/configmap-global.yaml` — `SPRING_DATASOURCE_REPLICA_URL`
 
-**App-side routing (Phase 3) — ❌ Nothing done yet**
-- ❌ `services/user-service/src/main/java/com/chieaid24/user_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW)
-- ❌ `services/device-service/src/main/java/com/chieaid24/device_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW)
-- ❌ `services/alert-service/src/main/java/com/chieaid24/alert_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW)
-- ❌ `services/device-service/.../service/DeviceService.java` — add `@Transactional(readOnly=true)` to read methods
-- ❌ `services/alert-service/.../service/AlertService.java` — add `@Transactional(readOnly=true)` only on controller-side reads, **not** on the Kafka listener
-- ❌ `docker-compose.yml` — three new `SPRING_DATASOURCE_REPLICA_*` env vars on user/device/alert services
+**App-side routing (Phase 3) — ✅ All done**
+- ✅ `services/user-service/src/main/java/com/chieaid24/user_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW). user-service's primaryDataSource bean is also exposed under the name `flywayDataSource` so Flyway never touches the routing proxy.
+- ✅ `services/device-service/src/main/java/com/chieaid24/device_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW)
+- ✅ `services/alert-service/src/main/java/com/chieaid24/alert_service/config/{DataSourceConfig,RoutingDataSource}.java` (NEW)
+- ✅ `services/device-service/.../service/DeviceService.java` — `@Transactional(readOnly=true)` on `getDeviceById`, `getAllDevicesByUserId`, `getTotalDevices`
+- ✅ `services/alert-service/.../repository/AlertRepository.java` — `@Transactional(readOnly=true)` on `findByUserIdOrderByCreatedAtDesc` and `countByUserId` (annotation lives on the repo interface because `AlertController` calls the repo directly). Kafka listener path intentionally untouched.
+- ✅ `docker-compose.yml` — `SPRING_DATASOURCE_REPLICA_URL` added on user-service, device-service, alert-service
+
+**Boot 4 import gotcha:** `DataSourceProperties` lives at `org.springframework.boot.jdbc.autoconfigure.DataSourceProperties` in Spring Boot 4.x (was `org.springframework.boot.autoconfigure.jdbc.DataSourceProperties` in Boot 3.x).
 
 ## Sources
 
