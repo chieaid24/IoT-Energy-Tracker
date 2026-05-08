@@ -1,0 +1,44 @@
+# EKS overlay for infra-chart.
+# Apply with: helm upgrade --install infra ./k8s/charts/infra-chart -f values-eks.yaml
+#
+# Disables in-cluster MySQL/Kafka/Ollama (replaced by RDS, MSK Serverless, Bedrock)
+# and turns on persistence for InfluxDB + Redis. Mailpit stays in-cluster as a dev SMTP
+# catcher; swap for SES in a prod overlay.
+#
+# StorageClass: PVCs without an explicit storageClassName fall through to the cluster
+# default. Phase 2 bootstrap sets gp3 as the EKS default StorageClass; if you want
+# explicit gp3 here, the subchart templates would need a templated storageClassName
+# field (deferred — current behavior matches the plan).
+
+global:
+  namespace: default
+
+mysql:
+  enabled: false                # using RDS (managed)
+
+kafka:
+  enabled: false                # using MSK Serverless (managed)
+
+kafkaUi:
+  enabled: false                # MSK has its own monitoring; defer
+
+ollama:
+  enabled: false                # using Bedrock (managed)
+
+mailpit:
+  enabled: true
+  service:
+    type: ClusterIP             # was LoadBalancer for minikube tunnel — close it on EKS
+
+influxdb:
+  enabled: true
+  service:
+    type: ClusterIP             # was LoadBalancer for minikube tunnel
+  persistence:
+    enabled: true
+    size: 20Gi
+
+redis:
+  enabled: true
+  service:
+    type: ClusterIP

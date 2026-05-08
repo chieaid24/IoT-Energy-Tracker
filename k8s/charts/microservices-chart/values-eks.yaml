@@ -1,0 +1,106 @@
+# EKS overlay for microservices-chart.
+# Apply with: helm upgrade --install microservices ./k8s/charts/microservices-chart -f values-eks.yaml
+#
+# Differences from base values.yaml:
+#   - Ingress hostname + TLS via cert-manager
+#   - RDS/MSK endpoints hardcoded (from terraform output)
+#   - Secrets pulled from AWS Secrets Manager via External Secrets Operator
+#   - MSK IAM SASL/SSL Kafka properties enabled
+#   - insight-service backend = bedrock with Haiku 4.5 inference profile + IRSA SA
+#   - Replicas bumped on stateless services
+
+ingress:
+  enabled: true
+  className: nginx
+  host: energy.aidanchien.com
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: route53-issuer
+  tls:
+    enabled: true
+    secretName: iot-tls
+
+global:
+  namespace: default
+
+  # MySQL section is left in place for compatibility, but datasource.urlOverride below
+  # is what the configmap actually reads on EKS.
+  mysql:
+    host: infra-mysql
+    port: 3306
+    replicaHost: infra-mysql-replica
+    replicaPort: 3306
+    database: energy_tracker
+    username: iotadmin
+    # Password value is irrelevant — it's pulled from External Secrets, not values.
+    password: "set-via-external-secrets"
+
+  datasource:
+    urlOverride: "jdbc:mysql://iot-tracker-dev-mysql.c0fwkuqqyner.us-east-1.rds.amazonaws.com:3306/energy_tracker"
+    replicaUrlOverride: ""
+
+  kafka:
+    bootstrapOverride: "boot-hjzsop5w.c3.kafka-serverless.us-east-1.amazonaws.com:9098"
+    iamAuth: true
+
+  secrets:
+    mode: external
+    external:
+      secretStoreRef: aws-secrets-manager
+      path: iot/dev
+      refreshInterval: 1h
+
+  influx:
+    token: "set-via-external-secrets"
+
+  jwt:
+    secret: "set-via-external-secrets"
+
+# Stateless services scaled up; ingestion + insight stay at 1 (single producer / single
+# narrator is fine for now).
+userService:
+  enabled: true
+  replicas: 2
+
+deviceService:
+  enabled: true
+  replicas: 2
+
+ingestionService:
+  enabled: true
+  replicas: 1
+
+usageService:
+  enabled: true
+  replicas: 2
+
+alertService:
+  enabled: true
+  replicas: 2
+
+# insight-service is referenced via the alias `insightService` (set in Chart.yaml).
+# Values here flow into the subchart.
+insightService:
+  enabled: true
+  replicas: 1
+  backend: bedrock
+  bedrock:
+    modelId: us.anthropic.claude-haiku-4-5-20251001-v1:0
+    region: us-east-1
+    maxTokens: "1024"
+    temperature: "0.4"
+    topP: "0.5"
+  serviceAccount:
+    create: true
+    name: microservices-insight-service
+    annotations:
+      # Created by the Terraform module insight_service_irsa.
+      eks.amazonaws.com/role-arn: arn:aws:iam::714454206433:role/iot-tracker-dev-insight-service
+
+frontend:
+  enabled: true
+  replicas: 2
+  auth:
+    nextauthSecret: "set-via-external-secrets"
+    googleClientId: "set-via-external-secrets"
+    googleClientSecret: "set-via-external-secrets"
