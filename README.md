@@ -35,7 +35,9 @@
 - **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
 - **Full observability stack**: distributed tracing (OTLP → Tempo), structured log aggregation (ECS JSON → Promtail → Loki), and Prometheus metrics — all correlated in Grafana.
 - **Spring Boot version split**: 5 services on Boot 4.0.1, insight-service on Boot 3.5.9 (Spring AI 1.1.2 does not yet support Boot 4.x).
-- **Production-grade Kubernetes deployment** via Helm with init containers, health probes, shared ConfigMaps/Secrets, and ingress routing.
+- **Production-grade Kubernetes deployment** on AWS EKS with Terraform IaC, HPA autoscaling (2–5 replicas), PodDisruptionBudgets, NetworkPolicies (default-deny), and CloudWatch alarms.
+- **Fully automated CI/CD**: GitHub Actions OIDC → ECR push → Helm deploy, with change detection (only rebuilds modified services).
+- **Zero-secret codebase**: all credentials in AWS Secrets Manager, synced to K8s via External Secrets Operator (IRSA-bound).
 
 ## Data Flow
 
@@ -48,7 +50,9 @@ ingestion-service  →  [Kafka: energy-usage]  →  usage-service  →  InfluxDB
                                                       ↓
                                                alert-service  →  MySQL + Mailpit
 
-insight-service  →  (polls usage-service REST)  →  Ollama (gemma3:4b)  →  AI insights
+insight-service  →  (polls usage-service REST)  →  LLM  →  AI insights
+                                                          ├── Ollama gemma3:4b (local/Minikube)
+                                                          └── AWS Bedrock Claude Haiku 4.5 (EKS)
 ```
 
 ## Services
@@ -60,7 +64,7 @@ insight-service  →  (polls usage-service REST)  →  Ollama (gemma3:4b)  →  
 | ingestion-service | 8082 | — | Kafka producer, multi-threaded event simulator |
 | usage-service | 8083 | InfluxDB, Redis | Kafka consumer, Redis read cache + scheduler lock, emits alert events |
 | alert-service | 8084 | MySQL (primary + replica) | Kafka consumer, Spring Mail via Mailpit, replica-routed reads |
-| insight-service | 8085 | — | Spring AI + Ollama, polls usage-service |
+| insight-service | 8085 | — | Spring AI + Ollama (local) or Bedrock (EKS), polls usage-service |
 
 ## Observability
 
@@ -278,6 +282,207 @@ http://localhost:{port}/actuator/prometheus
 
 Ports: user-service `8080`, device-service `8081`, ingestion-service `8082`, usage-service `8083`, alert-service `8084`, insight-service `8085`.
 
+## CI/CD
+
+### Pipeline Overview
+
+```
+push to main / tag v*
+    │
+    ▼
+build-and-push.yml
+    ├── detect-changes      ← dorny/paths-filter scans services/** + frontend/
+    ├── build matrix        ← one runner per changed service (parallel)
+    │     ├── OIDC → assume iot-tracker-dev-gha-deploy role
+    │     ├── docker buildx → push to ECR Public
+    │     └── tags: <sha> + latest (insight-service: +bedrock variant)
+    ▼
+deploy-eks.yml (auto-triggered or manual)
+    ├── OIDC → assume deploy role
+    ├── helm upgrade infra (values-eks.yaml)
+    ├── helm upgrade observability (values-eks.yaml)
+    └── helm upgrade microservices (values-eks.yaml, --set image.tag=<sha>)
+```
+
+- **No stored credentials** — all AWS access via GitHub OIDC federated identity.
+- **Change detection** — only rebuilds services with actual file changes.
+- **SHA-pinned deploys** — EKS never runs `:latest`, always a specific commit SHA.
+- **Concurrency guard** — only one deploy-eks run at a time.
+
+### Manual Operations
+
+```bash
+# Rebuild a single service from any branch:
+gh workflow run build-test.yml --ref <branch> -f service=<service-name>
+
+# Deploy to EKS manually:
+gh workflow run deploy-eks.yml
+```
+
+### Automated Code Review
+
+Every pull request triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against `CLAUDE.md` conventions and posts inline feedback. Mention `@claude` in a PR comment for targeted review.
+
+## Real Usage
+
+I connected the system to my own home using Shelly smartplugs. Check out the `/shelly` folder for how you can do it too!
+
+## Run on AWS EKS (Production)
+
+The application runs on AWS EKS with managed infrastructure (RDS, MSK Serverless) and full production hardening. All infrastructure is defined in Terraform; deployments use the same Helm charts with EKS-specific value overlays.
+
+### Architecture
+
+```
+                          Route53 (energy.aidanchien.com)
+                                     │
+                                ACM TLS cert
+                                     │
+                              NLB (internet-facing)
+                                     │
+                            ingress-nginx controller
+                                     │
+            ┌────────────────────────────────────────────────┐
+            │           │            │           │            │
+        frontend   user-svc    device-svc   usage-svc    ... (7 svcs)
+            │           │            │           │            │
+            └── inter-service via ClusterIP DNS ─────────────┘
+                         │                    │
+                         ▼                    ▼
+                     RDS MySQL           MSK Serverless
+                    (managed)           (IAM auth, 9098)
+
+            In-cluster (EBS gp3 persistence):
+            - InfluxDB, Redis, Mailpit
+            - Prometheus, Grafana, Loki, Tempo
+
+            insight-service ──► AWS Bedrock (Claude Haiku 4.5)
+                                via cross-region inference profile (IRSA)
+```
+
+### AWS Resources (Terraform)
+
+| Resource | Type | Details |
+|----------|------|---------|
+| VPC | `10.20.0.0/16` | 3 public, 3 private, 3 DB subnets, NAT gateway |
+| EKS | `iot-tracker-dev` | K8s 1.31, managed node group (t3.large × 3) |
+| RDS MySQL | `db.t3.medium` | 8.0.44, encrypted, 7-day backup, Performance Insights |
+| MSK Serverless | IAM auth | SASL/SSL on port 9098, topics: `energy-usage`, `energy-alerts` |
+| Route53 | Public zone | `energy.aidanchien.com` + wildcard |
+| ACM | TLS cert | `energy.aidanchien.com` + `*.energy.aidanchien.com` (Let's Encrypt via cert-manager) |
+| Secrets Manager | 3 secrets | `iot/dev/rds/master`, `iot/dev/global`, `iot/dev/frontend` |
+| IRSA roles | 7 roles | ALB Controller, EBS CSI, ESO, ExternalDNS, cert-manager, insight-service, GHA deploy |
+| CloudWatch | 4 alarms | RDS CPU >80%, RDS connections >80% max, RDS storage <20%, EKS node health |
+| SNS | 1 topic | `iot-tracker-dev-alarms` — alarm notification target |
+| ECR Public | 8 repos | `public.ecr.aws/v6r1m8q2/energy-tracker/<service>` |
+
+### Cluster Addons
+
+Installed via `scripts/eks-bootstrap.sh`:
+
+- **EBS CSI driver** — gp3 StorageClass (default)
+- **AWS Load Balancer Controller** — provisions NLB for ingress-nginx
+- **ingress-nginx** — internet-facing NLB, handles TLS termination
+- **ExternalDNS** — auto-creates Route53 A records from Ingress resources
+- **External Secrets Operator** — syncs AWS Secrets Manager → K8s Secrets
+- **cert-manager** — DNS-01 challenges via Route53 for Let's Encrypt certs
+- **metrics-server** — enables `kubectl top` and HPA CPU metrics
+
+### Production Hardening
+
+| Feature | Configuration |
+|---------|--------------|
+| **HPA** | All 7 services autoscale: min 2, max 5 replicas, target 70% CPU |
+| **PDB** | All 7 services: minAvailable=1 (survives node drain) |
+| **NetworkPolicies** | Default-deny + per-service ingress/egress allowlists |
+| **CloudWatch Alarms** | RDS CPU >80%, connections >53/66 max, free storage <4 GiB, EKS failed nodes |
+| **TLS everywhere** | Let's Encrypt cert, TLS termination at ingress |
+| **Secrets in Secrets Manager** | No plaintext in values files; synced via ExternalSecrets |
+| **IRSA** | Pod-level IAM — insight-service has Bedrock access only |
+
+### NetworkPolicy Rules
+
+| Service | Inbound from | Outbound to |
+|---------|-------------|-------------|
+| user-service | ingress, device-svc, usage-svc, insight-svc, frontend | RDS (3306) |
+| device-service | ingress, usage-svc | RDS (3306), user-svc (8080) |
+| ingestion-service | ingress | MSK (9098) |
+| usage-service | ingress, insight-svc | MSK (9098), InfluxDB (8086), user-svc, device-svc |
+| alert-service | ingress | MSK (9098), RDS (3306), Mailpit (1025) |
+| insight-service | ingress | usage-svc (8083), Bedrock (443) |
+| frontend | ingress | user-svc (8080) |
+
+### CI/CD (GitHub Actions)
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `build-and-push.yml` | Push to `main` or `v*` tag | Detects changed services via `dorny/paths-filter`, builds Docker images, pushes to ECR with SHA + latest tags. insight-service dual-builds: ollama + bedrock variants. |
+| `deploy-eks.yml` | After successful build, or manual `workflow_dispatch` | OIDC auth → `helm upgrade` infra → observability → microservices with SHA-pinned image tags |
+| `build-test.yml` | Manual `workflow_dispatch` | Single-service rebuild utility (uses `environment:dev` for OIDC from any branch) |
+
+All workflows use **GitHub OIDC** → IAM role assumption (no stored AWS credentials).
+
+### Prerequisites
+
+- Terraform ≥ 1.5
+- AWS CLI v2 with credentials for account `714454206433`
+- `kubectl`, `helm` 3.x
+- Domain with NS delegation to Route53
+
+### Deploy from Scratch
+
+```bash
+# 1. Provision infrastructure (~8 min)
+cd terraform/envs/dev
+terraform init && terraform apply
+
+# 2. Configure kubectl
+aws eks update-kubeconfig --name iot-tracker-dev --region us-east-1
+
+# 3. Install cluster addons
+./scripts/eks-bootstrap.sh
+
+# 4. Populate secrets
+aws secretsmanager put-secret-value --secret-id iot/dev/global \
+  --secret-string '{"SPRING_DATASOURCE_PASSWORD":"<rds-password>","INFLUX_TOKEN":"my-token","JWT_SECRET":"<jwt-secret>"}'
+aws secretsmanager put-secret-value --secret-id iot/dev/frontend \
+  --secret-string '{"NEXTAUTH_SECRET":"<secret>","GOOGLE_CLIENT_ID":"<id>","GOOGLE_CLIENT_SECRET":"<secret>"}'
+
+# 5. Deploy Helm charts
+helm upgrade --install infra ./k8s/charts/infra-chart -f ./k8s/charts/infra-chart/values-eks.yaml
+helm upgrade --install observability ./k8s/charts/observability-chart -f ./k8s/charts/observability-chart/values-eks.yaml
+helm upgrade --install microservices ./k8s/charts/microservices-chart -f ./k8s/charts/microservices-chart/values-eks.yaml
+
+# 6. Verify
+kubectl get pods   # All pods Running
+kubectl get hpa    # CPU targets reporting
+kubectl get pdb    # ALLOWED DISRUPTIONS ≥ 1
+```
+
+### Teardown
+
+```bash
+helm uninstall microservices
+helm uninstall observability
+helm uninstall infra
+cd terraform/envs/dev && terraform destroy
+```
+
+### Cost Estimate (dev)
+
+| Component | Monthly (approx) |
+|-----------|-----------------|
+| EKS control plane | $73 |
+| 3× t3.large nodes | $180 |
+| RDS db.t3.medium | $50 |
+| MSK Serverless | $10–30 (usage-based) |
+| NAT Gateway | $35 |
+| EBS volumes (gp3) | $25 |
+| NLB | $20 |
+| **Total** | **~$400/mo** |
+
+---
+
 ## Project Layout
 
 ```
@@ -292,53 +497,17 @@ observability/
 k8s/
   ├── charts/infra-chart/          # MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, Ollama
   ├── charts/observability-chart/  # Prometheus, Grafana, Loki, Promtail, Tempo
-  └── charts/microservices-chart/  # All 6 microservices + shared ConfigMap/Secret/Ingress
+  └── charts/microservices-chart/  # All 7 services + shared ConfigMap/Secret/Ingress
+terraform/
+  └── envs/dev/         # VPC, EKS, RDS, MSK, IAM, Route53, ACM, CloudWatch Alarms
+scripts/
+  └── eks-bootstrap.sh  # Installs all EKS cluster addons (Phase 2)
+.github/workflows/
+  ├── build-and-push.yml    # CI: build + push to ECR on merge
+  ├── deploy-eks.yml        # CD: deploy to EKS via Helm
+  ├── build-test.yml        # Manual single-service rebuild
+  └── claude-review.yml     # AI code review on PRs
 docker-compose.yml                 # Core application stack
 docker-compose.observability.yml   # Prometheus, Grafana, Loki, Promtail, Tempo
+eks_plan.md                        # EKS migration plan + phase progress
 ```
-
-## CI/CD
-
-### Pipeline Overview
-
-On every push to `main`, a GitHub Actions workflow (`.github/workflows/ci.yaml`) detects which services changed and builds only those — avoiding full rebuilds on every commit.
-
-```
-push to main
-    │
-    ▼
-detect-changes          ← dorny/paths-filter scans services/**
-    │                      normalizes paths → unique service directories
-    ▼
-build-and-push          ← matrix job, one runner per changed service (parallel)
-    │  configure AWS credentials
-    │  login to Amazon ECR Public
-    │  docker build <service>/
-    │  docker push public.ecr.aws/<alias>/energy-tracker/<service>:latest
-    ▼
-ECR Public registry     ← image available at :latest tag
-```
-
-### Deploying Updated Images to Kubernetes
-
-After new images are pushed, apply them to the cluster with:
-
-```bash
-helm upgrade microservices ./k8s/charts/microservices-chart
-```
-
-Kubernetes will pull the updated `:latest` images from ECR and perform a rolling restart of the affected deployments.
-
-### Automated Code Review
-
-Every pull request opened against `main` triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against the project's `CLAUDE.md` conventions and posts inline feedback on the PR. Reviewers can also mention `@claude` in any PR comment to request a targeted review.
-
-## Real Usage
-
-I connected the system to my own home using Shelly smartplugs. Check out the `/shelly` folder for how you can do it too!
-
----
-
-## Extensions (in progress)
-- **Redis queue** for AI inference requests (rate-limiting and request queuing for Ollama).
-- **AWS EKS migration**: IAM, ALB/NLB ingress, MSK (managed Kafka), alert-service as Lambda.

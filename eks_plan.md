@@ -93,9 +93,24 @@ Updated as work progresses. Anything not listed below is pending and untouched.
     - `51c0ffe` — Phase 7 runtime fixes (templates, values-eks, ingress, observability fsGroup, eks_plan)
     - `361e329` — Frontend AUTH_URL fix
 
+- **Phase 8 ✅ (validated 2026-05-11)** — Hardening complete:
+  - 8A: HPA on all 7 services — target 70% CPU, min 2 / max 5 replicas. All reporting real metrics.
+  - 8B: PDB on all 7 services — minAvailable: 1, ALLOWED DISRUPTIONS ≥ 1.
+  - 8C: NetworkPolicies — default-deny + per-service allows. Pipeline verified working through policies.
+  - 8D: CloudWatch Alarms — 4 alarms (RDS CPU, RDS connections, RDS storage, EKS node health), all `OK`. SNS topic created (no email subscription).
+  - Node group scaled from 2 → 3 to accommodate 14 microservice pods (2 replicas × 7 services).
+  - Branch: `phase-8-hardening` (not yet merged to main).
+
+- **Phase 9 ✅ (completed 2026-05-11)** — Documentation + handoff:
+  - README.md updated with full EKS deployment section: architecture diagram, AWS resources table, cluster addons, production hardening features, NetworkPolicy rules, CI/CD workflows, deploy-from-scratch guide, teardown, and cost estimate.
+  - Project layout updated to include `terraform/`, `scripts/`, `.github/workflows/`.
+  - Data flow diagram updated for dual LLM backend (Ollama local / Bedrock EKS).
+  - Technical highlights expanded with EKS-specific features (HPA, PDB, NetworkPolicies, OIDC CI/CD, Secrets Manager).
+  - Branch: `phase-8-hardening` (carries both Phase 8 and Phase 9 changes).
+
 **Outstanding inputs needed from operator:**
 
-1. **Bedrock daily quota** — Service Quotas request submitted but not yet approved. Account currently has 0 daily token cap → every Bedrock invocation throttles. Insight-service smoke test is the only remaining blocker.
+1. **Bedrock daily quota** — Service Quotas request submitted but not yet approved. Account currently has 0 daily token cap → every Bedrock invocation throttles. Insight-service AI inference is the only non-functional feature.
 
 **Where to read code/docs to pick up this work:**
 
