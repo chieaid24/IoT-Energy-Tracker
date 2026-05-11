@@ -1,0 +1,98 @@
+name: Build Test (manual)
+
+# Temporary manual workflow for validating OIDC + ECR push end-to-end from a non-main branch.
+# Pushes images with a `test-<sha>` tag — never overwrites `:latest`.
+# Safe to delete once Phase 6 of the EKS migration is validated and `build-and-push.yml`
+# has run successfully from `main`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Build target: a service dir under services/, or 'frontend'"
+        required: true
+        type: choice
+        options:
+          - user-service
+          - device-service
+          - ingestion-service
+          - usage-service
+          - alert-service
+          - insight-service
+          - frontend
+        default: user-service
+      build_bedrock_variant:
+        description: "insight-service only: also build the bedrock variant"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: public.ecr.aws/v6r1m8q2
+  NAMESPACE: energy-tracker
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::714454206433:role/iot-tracker-dev-gha-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR Public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Resolve build context
+        id: ctx
+        run: |
+          SVC="${{ inputs.service }}"
+          if [ "$SVC" = "frontend" ]; then
+            CONTEXT="frontend"
+          else
+            CONTEXT="services/$SVC"
+          fi
+          TAG="test-${GITHUB_SHA::7}"
+          IMAGE="${ECR_REGISTRY}/${NAMESPACE}/${SVC}"
+          echo "context=$CONTEXT" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE"     >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
+
+      - name: Build and push (SHA-tagged only)
+        run: |
+          docker build \
+            -t "${{ steps.ctx.outputs.image }}:${{ steps.ctx.outputs.tag }}" \
+            "${{ steps.ctx.outputs.context }}"
+          docker push "${{ steps.ctx.outputs.image }}:${{ steps.ctx.outputs.tag }}"
+
+      - name: Build and push bedrock variant
+        if: inputs.service == 'insight-service' && inputs.build_bedrock_variant
+        run: |
+          docker build \
+            --build-arg MAVEN_PROFILE=bedrock \
+            -t "${{ steps.ctx.outputs.image }}:${{ steps.ctx.outputs.tag }}-bedrock" \
+            services/insight-service
+          docker push "${{ steps.ctx.outputs.image }}:${{ steps.ctx.outputs.tag }}-bedrock"
+
+      - name: Summary + cleanup hint
+        run: |
+          IMG="${{ steps.ctx.outputs.image }}"
+          TAG="${{ steps.ctx.outputs.tag }}"
+          REPO="${NAMESPACE}/${{ inputs.service }}"
+          echo "::notice title=Image pushed::$IMG:$TAG"
+          echo ""
+          echo "To delete this test image when done:"
+          echo "  aws ecr-public batch-delete-image --repository-name $REPO --image-ids imageTag=$TAG --region us-east-1"
+          if [ "${{ inputs.build_bedrock_variant }}" = "true" ] && [ "${{ inputs.service }}" = "insight-service" ]; then
+            echo "  aws ecr-public batch-delete-image --repository-name $REPO --image-ids imageTag=$TAG-bedrock --region us-east-1"
+          fi
