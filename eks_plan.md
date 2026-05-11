@@ -101,9 +101,16 @@ Updated as work progresses. Anything not listed below is pending and untouched.
   - Node group scaled from 2 → 3 to accommodate 14 microservice pods (2 replicas × 7 services).
   - Branch: `phase-8-hardening` (not yet merged to main).
 
+- **Phase 9 ✅ (completed 2026-05-11)** — Documentation + handoff:
+  - README.md updated with full EKS deployment section: architecture diagram, AWS resources table, cluster addons, production hardening features, NetworkPolicy rules, CI/CD workflows, deploy-from-scratch guide, teardown, and cost estimate.
+  - Project layout updated to include `terraform/`, `scripts/`, `.github/workflows/`.
+  - Data flow diagram updated for dual LLM backend (Ollama local / Bedrock EKS).
+  - Technical highlights expanded with EKS-specific features (HPA, PDB, NetworkPolicies, OIDC CI/CD, Secrets Manager).
+  - Branch: `phase-8-hardening` (carries both Phase 8 and Phase 9 changes).
+
 **Outstanding inputs needed from operator:**
 
-1. **Bedrock daily quota** — Service Quotas request submitted but not yet approved. Account currently has 0 daily token cap → every Bedrock invocation throttles. Insight-service smoke test is the only remaining blocker.
+1. **Bedrock daily quota** — Service Quotas request submitted but not yet approved. Account currently has 0 daily token cap → every Bedrock invocation throttles. Insight-service AI inference is the only non-functional feature.
 
 **Where to read code/docs to pick up this work:**
 
