@@ -74,7 +74,7 @@ Updated as work progresses. Anything not listed below is pending and untouched.
     - Ingestion → MSK (energy-usage) → usage-service → InfluxDB ✓
     - Alert pipeline: usage-service → MSK (energy-alerts) → alert-service → stored + sent ✓
     - Usage query: `GET /api/v1/usage/{userId}` returns aggregated data from InfluxDB ✓
-    - Frontend: HTTPS returns 307 → /login (NextAuth working) ✓
+    - Frontend: HTTPS `https://energy.aidanchien.com` → login page renders correctly ✓
     - **Blocker**: insight-service Bedrock inference blocked (daily token quota = 0). Service is healthy, IRSA attached, but falls back to Ollama (not available on EKS). Requires Service Quotas approval.
   - 7D: Observability confirmed:
     - Prometheus: 6/6 targets `up=1` ✓
@@ -87,6 +87,11 @@ Updated as work progresses. Anything not listed below is pending and untouched.
     - Ingress `/api/v1/auth` route added for auth endpoints
     - Observability chart fsGroup fixes for EBS PVC permissions
     - CPU requests reduced to 100m to fit 2x t3.large node group
+    - Frontend `AUTH_URL` templated and set to `https://energy.aidanchien.com` (was hardcoded `http://localhost` → NextAuth redirected to localhost)
+    - Frontend `NEXT_PUBLIC_API_URL` templated and set to `https://energy.aidanchien.com`
+  - Commits on `main`:
+    - `51c0ffe` — Phase 7 runtime fixes (templates, values-eks, ingress, observability fsGroup, eks_plan)
+    - `361e329` — Frontend AUTH_URL fix
 
 **Outstanding inputs needed from operator:**
 
