@@ -9,6 +9,9 @@
 #   - insight-service backend = bedrock with Haiku 4.5 inference profile + IRSA SA
 #   - Replicas bumped on stateless services
 
+networkPolicies:
+  enabled: true
+
 ingress:
   enabled: true
   className: nginx
@@ -59,37 +62,27 @@ global:
 
 # Start with 1 replica each for initial validation; scale up once stable.
 # CPU requests reduced from 250m to 100m to fit 2x t3.large node group.
+# camelCase keys satisfy Helm dependency conditions only (condition: userService.enabled).
+# Actual subchart value overrides are under hyphenated keys below.
 userService:
   enabled: true
-  replicas: 1
-  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
-
 deviceService:
   enabled: true
-  replicas: 1
-  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
-
 ingestionService:
   enabled: true
-  replicas: 1
-  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
-
 usageService:
   enabled: true
-  replicas: 1
-  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
-
 alertService:
   enabled: true
-  replicas: 1
-  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
 
 # insight-service is referenced via the alias `insightService` (set in Chart.yaml).
 # Values here flow into the subchart.
 insightService:
   enabled: true
-  replicas: 1
+  replicas: 2
   resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
   backend: bedrock
   bedrock:
     modelId: us.anthropic.claude-haiku-4-5-20251001-v1:0
@@ -104,10 +97,44 @@ insightService:
       # Created by the Terraform module insight_service_irsa.
       eks.amazonaws.com/role-arn: arn:aws:iam::714454206433:role/iot-tracker-dev-insight-service
 
+# Subchart value overrides use the dependency name (hyphenated) for cascading.
+# The camelCase keys above satisfy Helm conditions only.
+user-service:
+  replicas: 2
+  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
+
+device-service:
+  replicas: 2
+  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
+
+ingestion-service:
+  replicas: 2
+  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
+
+usage-service:
+  replicas: 2
+  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
+
+alert-service:
+  replicas: 2
+  resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
+
 frontend:
   enabled: true
-  replicas: 1
+  replicas: 2
   resources: {requests: {memory: "256Mi", cpu: "100m"}, limits: {memory: "512Mi", cpu: "500m"}}
+  autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 5, targetCPU: 70}
+  pdb: {enabled: true, minAvailable: 1}
   authUrl: "https://energy.aidanchien.com"
   nextPublicApiUrl: "https://energy.aidanchien.com"
   auth:
