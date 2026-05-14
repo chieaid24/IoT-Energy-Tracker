@@ -1,5 +1,5 @@
 let CONFIG = {
-  endpoint: "http://<your-ip>:8082/api/v1/ingestion/shelly/1", // Update to your server location
+  endpoint: "http://energy.aidanchien.com/api/v1/ingestion/shelly/1", // Or update to your server location
   interval_sec: 5  // how often to POST, in seconds
 };
 
