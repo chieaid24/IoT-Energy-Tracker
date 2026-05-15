@@ -14,11 +14,11 @@ Shelly Plug (HTTP POST every 5s)  →  ingestion-service :8082  →  Kafka  → 
 
 ### 1. Deploy the ingestion-service
 
-Ensure `ingestion-service` is running and accessible from your local network (Docker Compose or Kubernetes with `minikube tunnel`).
+Ensure `ingestion-service` is running and reachable through the hosted server. nginx routes the request to `ingestion-service` for you, so no port is needed.
 
 The target endpoint is:
 ```
-POST http://<your-server-ip>:8082/api/v1/ingestion/shelly/{deviceId}
+POST https://energy.aidanchien.com/api/v1/ingestion/shelly/{deviceId}
 ```
 
 ### 2. Register your device
@@ -34,7 +34,7 @@ Create a device entry via `device-service` so the ingestion pipeline can associa
 
 ```js
 let CONFIG = {
-  endpoint: "http://<your-server-ip>:8082/api/v1/ingestion/shelly/<deviceId>",
+  endpoint: "https://energy.aidanchien.com/api/v1/ingestion/shelly/<deviceId>",
   interval_sec: 5
 };
 ```

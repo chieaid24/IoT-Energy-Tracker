@@ -5,7 +5,9 @@ Ingests IoT data from your home devices.
 
 Stores, processes, and delivers real-time alerts and AI insights.
 
-Built for real production workloads with AWS Elastic Kubernetes Service and end-to-end observability.
+Built for real production workloads with AWS Elastic Kubernetes Service, microservices, and end-to-end observability.
+
+> Live deployment is down to save on cost, see Costs for details
 
 
 [![Github Release](https://img.shields.io/github/v/release/chieaid24/energy-tracker)](https://github.com/chieaid24/energy-tracker/releases)
@@ -16,58 +18,98 @@ Built for real production workloads with AWS Elastic Kubernetes Service and end-
 </p>
 
 ## Technical Highlights
-- Event-driven pipeline with **Kafka decoupling** ingestion, processing, and alerting across three topics.
-- **Dual persistence model**: MySQL for relational data (users, devices, alerts) and InfluxDB for time-series usage analytics.
-- **MySQL primary + read replica** with async GTID row-based replication (`super_read_only=ON` on the replica). `user-service`, `device-service`, and `alert-service` route reads to the replica via Spring's `AbstractRoutingDataSource` keyed off `@Transactional(readOnly=true)`, with separate Hikari pools (`primary` size 8, `replica` size 4) and a `LazyConnectionDataSourceProxy` so the routing key resolves after the transaction flag is set. Flyway is pinned to the primary pool.
-- **Redis caching layer**: usage-service caches InfluxDB query results in Redis (2-minute TTL) and uses a distributed `SETNX` lock on the 10-second aggregation scheduler, ensuring only one replica hits InfluxDB per tick regardless of how many instances are running.
-- **AI-powered insights** via Spring AI + Ollama (gemma3:4b), polling usage aggregates on a cron schedule to generate efficiency recommendations.
-- **Multi-threaded** simulation in ingestion-service to stress test throughput and backpressure locally.
-- **Full observability stack**: distributed tracing (OTLP → Tempo), structured log aggregation (ECS JSON → Promtail → Loki), and Prometheus metrics — all correlated in Grafana.
-- **Spring Boot version split**: 5 services on Boot 4.0.1, insight-service on Boot 3.5.9 (Spring AI 1.1.2 does not yet support Boot 4.x).
-- **Production-grade Kubernetes deployment** on AWS EKS with Terraform IaC, HPA autoscaling (2–5 replicas), PodDisruptionBudgets, NetworkPolicies (default-deny), and CloudWatch alarms.
-- **Fully automated CI/CD**: GitHub Actions OIDC → ECR push → Helm deploy, with change detection (only rebuilds modified services).
-- **Zero-secret codebase**: all credentials in AWS Secrets Manager, synced to K8s via External Secrets Operator (IRSA-bound).
+- Provisioned AWS footprint as **100% Infrastructure-as-Code** with Terraform, a 3-AZ VPC, **EKS** cluster, **RDS MySQL**, **MSK Serverless**, Route53, and ACM.
+- Deployed **cloud-native Kubernetes** stack with HPA autoscaling, PodDisruptionBudgets, and health-probed rolling deploys fronted by AWS Load Balancer Controller.
+- Built **fully automated CI/CD** pipeline with GitHub Actions that rebuilds changed services, pushes to ECR, and deploys to EKS via Helm.
+- Implemented **full observability stack** with tracing, log aggregation, and metrics collected in Grafana.
+- Designed **scalable database layer** with MySQL + read replicas for relational data and InfluxDB for time-series usage analytics.
+- Maintained **zero-secret codebase** by storing credentials in **AWS Secrets Manager** and syncing to cluster via IRSA-bound role. Nothing sensitive in Git or container images.
 
 
 
-## Grafana Observability
+## Demo
 
-| JVM Metrics | Service Health Overview |
+| User Flow | Grafana JVM Metrics |
 |---|---|
-| <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/fb54b941-55de-4d19-b0a1-071e29329a60" /> | <img alt="Grafana Service Health Overview" src="https://github.com/user-attachments/assets/bd373f3f-f867-47af-905a-bcafced74dfa" /> |
+| Insert video here | <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/fb54b941-55de-4d19-b0a1-071e29329a60" /> |
 
-## Frontend Demo
----
+## Functional Overview
+
+- Ingests real-time power readings from **Shelly smart plugs** (or a built-in multi-threaded simulator) via REST into Kafka, carrying device ID, wattage, and timestamp.
+- Stores consumption data as **time-series in InfluxDB**, enabling efficient hourly/daily/weekly aggregations and per-device range queries.
+- Emits **threshold-based alerts** when usage exceeds configured limits — alert-service persists the event in MySQL and sends an email notification via SMTP.
+- Generates **AI-powered energy insights** by polling recent usage data and sending it to an LLM (Ollama locally, Bedrock on EKS) for efficiency recommendations with confidence scores.
+- Serves a **real-time Next.js dashboard** with live summary cards, per-device energy charts, alert history, and an AI insights panel — all polling backend services continuously.
+- Manages **users and devices** through JWT-secured REST APIs with Google OAuth + credentials login and inter-service ownership validation.
+
 
 ## Tools Used
 | Category | Tools |
 | --- | --- |
 | Backend |   <img src="https://img.shields.io/badge/Java-%23ED8B00?style=for-the-badge&logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pg0KPCEtLSBVcGxvYWRlZCB0bzogU1ZHIFJlcG8sIHd3dy5zdmdyZXBvLmNvbSwgR2VuZXJhdG9yOiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4NCjxzdmcgaGVpZ2h0PSI4MDBweCIgd2lkdGg9IjgwMHB4IiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIA0KCSB2aWV3Qm94PSIwIDAgNTAyLjYzMiA1MDIuNjMyIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxnPg0KCQk8cGF0aCBzdHlsZT0iZmlsbDojZmZmZmZmOyIgZD0iTTI0MC44NjQsMjY5Ljg5NGMwLDAtMjguMDItNTMuOTkyLTI2Ljk4NS05My40NDVjMC43NTUtMjguMTkzLDY0LjMyNC01Ni4wNjIsODkuMjgxLTk2LjUyOQ0KCQkJQzMyOC4wNzQsMzkuNDMxLDMwMC4wNTQsMCwzMDAuMDU0LDBzNi4yMzQsMjkuMDc3LTEwLjM3Niw1OS4xNDdjLTE2LjYwOSwzMC4xMTMtNzcuOTE0LDQ3Ljc3OS0xMDEuNzQ5LDk5LjY3OQ0KCQkJUzI0MC44NjQsMjY5Ljg5NCwyNDAuODY0LDI2OS44OTR6Ii8+DQoJCTxwYXRoIHN0eWxlPSJmaWxsOiNmZmZmZmY7IiBkPSJNMzQ1Ljc0MSwxMDUuODY5YzAsMC05NS40OTQsMzYuMzQ3LTk1LjQ5NCw3Ny44NDljMCw0MS41NDUsMjUuOTI4LDU1LjAyNywzMC4xMTMsNjguNTA5DQoJCQljNC4xNDIsMTMuNTI1LTcuMjY5LDM2LjM0Ny03LjI2OSwzNi4zNDdzMzcuMzYxLTI1Ljk1LDMxLjEwNS01Ni4wNjJjLTYuMjM0LTMwLjExMy0zNS4yOS0zOS40NzUtMTguNjU5LTY5LjU0NA0KCQkJQzI5Ni42NDYsMTQyLjc5OSwzNDUuNzQxLDEwNS44NjksMzQ1Ljc0MSwxMDUuODY5eiIvPg0KCQk8cGF0aCBzdHlsZT0iZmlsbDojZmZmZmZmOyIgZD0iTTIzMC41MSwzMjQuNzQ4Yzg4LjI0Ni0zLjE0OSwxMjAuNDMtMzAuOTk3LDEyMC40My0zMC45OTcNCgkJCWMtNTcuMDc2LDE1LjU1My0yMDguNjU0LDE0LjUzOS0yMDkuNzExLDMuMTI4Yy0xLjAxNC0xMS40MTEsNDYuNzAxLTIwLjc3Myw0Ni43MDEtMjAuNzczcy03NC43MjEsMC04MC45NTUsMTguNjgNCgkJCUMxMDAuNzQsMzEzLjQ2NywxNDIuMzI4LDMyNy44MzMsMjMwLjUxLDMyNC43NDh6Ii8+DQoJCTxwYXRoIHN0eWxlPSJmaWxsOiNmZmZmZmY7IiBkPSJNMzU4LjE4NywzNjguNDk0YzAsMCw4Ni4zNjktMTguNDIxLDc3LjgyNy02NS4zMzhjLTEwLjM1NC01Ny4xMTktNzAuNTgtMjQuOTM2LTcwLjU4LTI0LjkzNg0KCQkJczQyLjYwMiwwLDQ2LjcyMiwyNS45MjhDNDE2LjMyLDMzMC4wOTgsMzU4LjE4NywzNjguNDk0LDM1OC4xODcsMzY4LjQ5NHoiLz4NCgkJPHBhdGggc3R5bGU9ImZpbGw6I2ZmZmZmZjsiIGQ9Ik0zMTUuNjI4LDM0My42MDFjMCwwLTIxLjc2NSw1LjcxNi01NC4wMTMsOS4zNGMtNDMuMjI4LDQuODUzLTk1LjQ5NCwxLjAxNC05OS42NTctNi4yNTYNCgkJCWMtNC4wOTgtNy4yNjksNy4yNjktMTEuNDExLDcuMjY5LTExLjQxMWMtNTEuOTIxLDEyLjQ2OC0yMy41MTIsMzQuMjMzLDM3LjMzOSwzOC40MThjNTIuMTU4LDMuNTU5LDEyOS43OTEtMTUuNTc0LDEyOS43OTEtMTUuNTc0DQoJCQlMMzE1LjYyOCwzNDMuNjAxeiIvPg0KCQk8cGF0aCBzdHlsZT0iZmlsbDojZmZmZmZmOyIgZD0iTTE4MS43MzgsMzg4Ljk0M2MwLDAtMjMuNTU1LDAuNjY5LTI0LjkzNiwxMy4xMzdjLTEuMzU5LDEyLjM4MiwxNC40OTYsMjMuNTEyLDcyLjY1LDI2Ljk2NA0KCQkJYzU4LjEzMywzLjQ1MSw5OC45ODgtMTUuODk4LDk4Ljk4OC0xNS44OThsLTI2LjI5NS0xNS45NjJjMCwwLTE2LjYzMSwzLjQ5NC00Mi4yMzYsNi45NDYNCgkJCWMtMjUuNjI2LDMuNDczLTc4LjE3My0yLjc4My04MC4yNDMtNy41OTNDMTc3LjU1MywzOTEuNjgyLDE4MS43MzgsMzg4Ljk0MywxODEuNzM4LDM4OC45NDN6Ii8+DQoJCTxwYXRoIHN0eWxlPSJmaWxsOiNmZmZmZmY7IiBkPSJNNDA3Ljk5NCw0NDUuMDA1YzguOTk1LTkuNzA3LTIuNzgzLTE3LjMyMS0yLjc4My0xNy4zMjFzNC4xNDIsNC44NTMtMS4zMzcsMTAuMzc2DQoJCQljLTUuNTQ0LDUuNTIyLTU2LjA4NCwxOS4zNDktMTM3LjA2MSwyMy41MTJjLTgwLjk1NSw0LjE2My0xNjguODU2LTcuNjE1LTE3MS42MzktMTcuOTkNCgkJCWMtMi42OTYtMTAuMzc2LDQ1LjAxOC0xOC42NTksNDUuMDE4LTE4LjY1OWMtNS41MjIsMC42OS03MS45NiwyLjA3MS03NC4wNzQsMjAuMDgyYy0yLjA3MSwxNy45NjgsMjkuMDU2LDMyLjUwNywxNTMuNjcsMzIuNTA3DQoJCQlDMzQ0LjMzOSw0NzcuNDkxLDM5OS4wNDIsNDU0LjY0Nyw0MDcuOTk0LDQ0NS4wMDV6Ii8+DQoJCTxwYXRoIHN0eWxlPSJmaWxsOiNmZmZmZmY7IiBkPSJNMzU5LjU2OCw0ODUuODE3Yy01NC42ODIsMTEuMDQ0LTIyMC43MzQsNC4wNzctMjIwLjczNCw0LjA3N3MxMDcuOTE5LDI1LjYyNiwyMzEuMTA5LDQuMTg1DQoJCQljNTguODg4LTEwLjI2OCw2Mi4zMTgtMzguNzYzLDYyLjMxOC0zOC43NjNTNDE0LjI1LDQ3NC43MDgsMzU5LjU2OCw0ODUuODE3eiIvPg0KCTwvZz4NCgk8Zz4NCgk8L2c+DQoJPGc+DQoJPC9nPg0KCTxnPg0KCTwvZz4NCgk8Zz4NCgk8L2c+DQoJPGc+DQoJPC9nPg0KCTxnPg0KCTwvZz4NCgk8Zz4NCgk8L2c+DQoJPGc+DQoJPC9nPg0KCTxnPg0KCTwvZz4NCgk8Zz4NCgk8L2c+DQoJPGc+DQoJPC9nPg0KCTxnPg0KCTwvZz4NCgk8Zz4NCgk8L2c+DQoJPGc+DQoJPC9nPg0KCTxnPg0KCTwvZz4NCjwvZz4NCjwvc3ZnPg==&logoColor=white" alt="Java" />   <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-%236DB33F?style=for-the-badge&logo=springboot&logoColor=%23FFFFFF" /> <img alt="Static Badge" src="https://img.shields.io/badge/Spring%20AI-%23d4aa00?style=for-the-badge&logo=spring&logoColor=%23FFFFFF">|
 | Frontend |   <img alt="Static Badge" src="https://img.shields.io/badge/typescript-%233178C6?style=for-the-badge&logo=typescript&logoColor=%23FFFFFF"> <img alt="Next.js" src="https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=nextdotjs&logoColor=white" />  <img alt="Static Badge" src="https://img.shields.io/badge/tailwind%20css-%2306B6D4?style=for-the-badge&logo=tailwindcss&logoColor=%23FFFFFF"> |
-| Data Storage |   <img alt="Static Badge" src="https://img.shields.io/badge/MySQL%20(RDS)-%234479A1?style=for-the-badge&logo=mysql&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/InfluxDB-%2322ADF6?style=for-the-badge&logo=influxdb&logoColor=%23FFFFFF" /> <img alt="Static Badge" src="https://img.shields.io/badge/Flyway-%23CC0200?style=for-the-badge&logo=flyway&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/Redis-%23FF4438?style=for-the-badge&logo=redis&logoColor=%23FFFFFF"> |
-| Messaging | <img alt="Static Badge" src="https://img.shields.io/badge/Apache%20Kafka%20(MSK)-%23231F20?style=for-the-badge&logo=apachekafka&logoColor=%23FFFFFF"> |
+| Data / Messaging |   <img alt="Static Badge" src="https://img.shields.io/badge/MySQL%20(RDS)-%234479A1?style=for-the-badge&logo=mysql&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/InfluxDB-%2322ADF6?style=for-the-badge&logo=influxdb&logoColor=%23FFFFFF" /> <img alt="Static Badge" src="https://img.shields.io/badge/Flyway-%23CC0200?style=for-the-badge&logo=flyway&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/Redis-%23FF4438?style=for-the-badge&logo=redis&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/Apache%20Kafka%20(MSK)-%23231F20?style=for-the-badge&logo=apachekafka&logoColor=%23FFFFFF"> |
 | AI Inference | <img src="https://img.shields.io/badge/AWS%20Bedrock-%2301a88d?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iODAwIiBmaWxsPSIjZmZmIiB2aWV3Qm94PSIwIDAgMzIgMzIiPjxwYXRoIGQ9Ik02LjU4NCA5LjAxYy0xLjM2IDAtMi43NC41My0yLjk3LjgyLS4wNi4xMi0uMiAxLjA5LjEzIDEuMDkuMTEgMCAuMTYuMDIuNDgtLjEzIDEuMi0uNDcgMS45Ni0uNDYgMi4wNy0uNDYgMS4zNS0uMTMgMi4xMy43OSAyLjAxIDEuOTh2LjdjLTEuMTQtLjI3LTEuNzktLjI4LTIuMTEtLjI4LTEuNjYtLjEtMy4xOTQuNzc2LTMuMTk0IDIuNyAwIDIuMTEgMS44ODMgMi41NiAyLjYxMyAyLjUzIDEuMDkuMDEgMi4xMy0uNDggMi44Mi0xLjMzLjU1IDEuMjMuOSAxLjE1LjkxIDEuMTUuMSAwIC4xOC0uMDQuMjYtLjA5bC41Ny0uNGMuMS0uMDYuMTgtLjE2LjE5LS4yOC0uMDEtLjI5LS41My0uNzQtLjQ5LTEuNzV2LTMuMTJhMy4xOCAzLjE4IDAgMCAwLS43OTktMi4zNSAzLjQyIDMuNDIgMCAwIDAtMi40OS0uNzhtMTkuMzczIDBjLTIgMC0zLjE1IDEuMjUtMy4xMiAyLjUyIDAgMS43NCAxLjc2IDIuMjkgMS45NiAyLjM1IDEuNjkuNTMgMS45Mi41NSAyLjM5Ljk1LjQuNDEuMzUgMS4yMS0uMjQgMS41Ni0uMTcuMS0uOS41NC0yLjU1LjItLjU1LS4xMS0uODQtLjI0LTEuMjktLjQzLS4xMi0uMDQtLjQtLjExLS40LjI2di40OWMwIC4yMy4xNC40NC4zNS41NCAxLjA1LjUzIDIuMzEuNTUgMi41OC41NS4wNCAwIDIuMzQuMDAxIDMuMTEtMS41NS4xNTgtLjMyLjU3LTEuNDktLjItMi40OS0uNjQtLjc1LTEuMTktLjgzLTIuODMtMS4zMy0uMTQtLjA0LTEuMzUtLjM1LTEuMzQtMS4yLS4wNi0xLjA5IDEuNDItMS4xNSAxLjczLTEuMTMgMS4yNS0uMDIgMS44Ny40NSAyLjIxLjQ4LjE1IDAgLjIyLS4wOS4yMi0uMjl2LS40NmEuNS41IDAgMCAwLS4wOS0uMzFjLS40LS41Mi0xLjkzLS43MS0yLjQ5LS43MW0tMTUuMTguMjVjLS4xMS4wMi0uMTkuMTMtLjE3LjI0LjAyLjEzLjA0LjI2LjA5LjM5bDIuMjQgNy4zOWMuMDUuMjQuMjEuNS41Ni40NmguODJjLjUuMDUuNTctLjQzLjU4LS40OGwxLjQ3LTYuMTYgMS40OSA2LjE3Yy4wMS4wNS4wOC41My41Ny40OGguODNjLjM2LjA0LjUzLS4yMi41OC0uNDYgMi41Mi04LjExIDIuMzUtNy41NiAyLjM3LTcuNjQuMDQtLjQyLS4yLS4zOS0uMjQtLjM4aC0uODljLS40NS0uMDUtLjU0LjM2LS41Ni40NmwtMS42NiA2LjQxLTEuNS02LjQxYy0uMDctLjQ5LS40Ny0uNDctLjU3LS40NmgtLjc3Yy0uNDQtLjA0LS41NS4zMS0uNTguNDZsLTEuNDkgNi4zMi0xLjYtNi4zMmMtLjA0LS4yLS4xNy0uNTEtLjU2LS40N3ptLTQuMjU0IDQuNjNjLjcyLjAxIDEuMzQyLjEyIDEuNzcyLjIyIDAgLjUuMDE4Ljc4LS4wOTIgMS4yMy0uMTQuNDgtLjc1OSAxLjM1LTIuMjE5IDEuMzctLjg0LjA0LTEuMzktLjYyLTEuMzQtMS4zNy0uMDUtMS4yIDEuMTktMS41IDEuODgtMS40NW0yMi41MTggNi4xMTJjLS45MzMuMDEzLTIuMDM1LjIyMi0yLjg3MS44MDktLjI1OC4xNzktLjIxMy40MjcuMDc0LjM5NC45NC0uMTEzIDMuMDMyLS4zNjcgMy40MDYuMTExcy0uNDE0IDIuNDUtLjc2MyAzLjMzMmMtLjEwOC4yNjMuMTIuMzcyLjM2MS4xNzIgMS41NjQtMS4zMSAxLjk3LTQuMDU2IDEuNjUtNC40NS0uMTYtLjE5OC0uOTI0LS4zODEtMS44NTctLjM2OG0tMjcuODI0IDFjLS4yMTguMDMtLjMxMi4zMDYtLjA4NC41MjVDNS4wNSAyNS4yMDEgMTAuMjI2IDI3IDE1Ljk3MyAyN2M0LjA5OSAwIDguODU3LTEuMzM3IDEyLjE0Mi0zLjg1Ny41NDMtLjQyLjA4LTEuMDQ3LS40NzYtLjgtMy42ODMgMS42MjYtNy42ODQgMi40MDktMTEuMzI1IDIuNDA5LTUuMzk2IDAtMTAuNjItMS4xMjctMTQuODQ1LTMuNjg2YS40LjQgMCAwIDAtLjI1Mi0uMDY0Ii8+PC9zdmc+&logoColor=white" alt="AWS" /> <img alt="Static Badge" src="https://img.shields.io/badge/Ollama-%23000000?style=for-the-badge&logo=ollama&logoColor=%23FFFFFF"> |
 | Observability | <img alt="Static Badge" src="https://img.shields.io/badge/prometheus-%23E6522C?style=for-the-badge&logo=prometheus&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/grafana-%23F46800?style=for-the-badge&logo=grafana&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/loki-%23D96800?style=for-the-badge&logoColor=%23FFFFFF"> |
 | Infrastructure |   <img alt="Static Badge" src="https://img.shields.io/badge/kubernetes%20(eks)-%23326CE5?style=for-the-badge&logo=kubernetes&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/helm-%230F1689?style=for-the-badge&logo=helm&logoColor=%23FFFFFF"> <img alt="Static Badge" src="https://img.shields.io/badge/Docker-%232496ED?style=for-the-badge&logo=docker&logoColor=%23FFFFFF" />     <img alt="Static Badge" src="https://img.shields.io/badge/terraform-%23844FBA?style=for-the-badge&logo=terraform&logoColor=%23FFFFFF">   <img alt="Static Badge" src="https://img.shields.io/badge/GitHub%20Actions-%232088FF?style=for-the-badge&logo=githubactions&logoColor=%23FFFFFF">|
 
 
-## Data Flow
+## AWS-Specific Architecture
+
+Application runs on AWS EKS with managed RDS and MSK Serverless. 
+- All 7 services autoscale via HPA (2-5 replicas) and survive node drains with PodDisruptionBudgets. 
+- Infrastructure defined in Terraform, and deployments use the same Helm charts with EKS-specific value overlays.
+- IRSA roles for pod level IAM, eliminating shared node roles and static credentials.
 
 ```
-ingestion-service  →  [Kafka: energy-usage]  →  usage-service  →  InfluxDB
-                                                      ↓                ↑
-                                                    Redis  ─(miss)─────┘
-                                                      ↓
-                                             [Kafka: energy-alerts]
-                                                      ↓
-                                               alert-service  →  MySQL + Mailpit
+                Route53 (energy.aidanchien.com)
+                                 │
+                          NLB (internet-facing)
+                                 │
+                        ingress-nginx controller
+                                 │
+        ┌─────────────────────────────────────────────────┐
+        │           │            │           │            │
+    frontend   user-svc    device-svc   usage-svc    ... (7 svcs)
+        │           │            │           │            │
+        └──────── inter-service via ClusterIP DNS ────────┘
+                     │                    │
+                     ▼                    ▼
+                 RDS MySQL           MSK Serverless
 
-insight-service  →  (polls usage-service REST)  →  LLM  →  AI insights
-                                                          ├── Ollama gemma3:4b (local/Minikube)
-                                                          └── AWS Bedrock Claude Haiku 4.5 (EKS)
+        insight-service ──► AWS Bedrock (Claude Haiku 4.5)
+                            via cross-region inference profile (IRSA)
 ```
 
-## Services
+## Feature Details
+
+<details>
+<summary><h3>Cost</h3></summary>
+
+| Component | Spec | Monthly |
+|---|---|---|
+| EKS control plane | K8s 1.31, standard support | $73.00 |
+| EC2 nodes | 3× t3.large @ $0.0832/hr | $182.21 |
+| RDS instance | db.t3.medium MySQL, single-AZ @ $0.068/hr | $49.64 |
+| RDS storage | gp3, ~20 GB allocated @ $0.115/GB | $2.30 |
+| **MSK Serverless cluster** | Flat $0.75/cluster-hr | $547.50 |
+| MSK Serverless partitions | ~10 partitions @ $0.0015/hr | $10.95 |
+| NAT Gateway | 1× @ $0.045/hr + data processing | ~$34 |
+| NLB | Base @ $0.0225/hr + minimal LCU | ~$21 |
+| EBS gp3 | 7 in-cluster PVCs + 3 node roots (~130 GB) | ~$11 |
+| Secrets Manager | 3 secrets @ $0.40/mo + API calls | $1.20 |
+| Route53 hosted zone | 1 zone | $0.50 |
+| CloudWatch | 4 alarms (free tier), basic metrics/logs | ~$3 |
+| ACM certificates | Public certs are free | $0 |
+| Bedrock (Haiku 4.5) | Pay-per-token, low personal usage | ~$1–5 |
+| Data transfer out | Internet egress | ~$1–3 |
+| **Total** | | **~$940/mo** |
+
+> Production environment is currently spun down. All infrastructure reproducible via `terraform apply` + `helm install` (see [Deploying to AWS EKS](#)).
+</details>
+
+<details>
+<summary><strong>Services</strong></summary>
 
 | Service | Port | Persistence | Notes |
 |---|---|---|---|
@@ -77,6 +119,11 @@ insight-service  →  (polls usage-service REST)  →  LLM  →  AI insights
 | usage-service | 8083 | InfluxDB, Redis | Kafka consumer, Redis read cache + scheduler lock, emits alert events |
 | alert-service | 8084 | MySQL (primary + replica) | Kafka consumer, Spring Mail via Mailpit, replica-routed reads |
 | insight-service | 8085 | — | Spring AI + Ollama (local) or Bedrock (EKS), polls usage-service |
+
+</details>
+
+<details>
+<summary><strong>Observability</strong></summary>
 
 ## Observability
 
@@ -123,6 +170,11 @@ Spring Boot Services
 | Loki | `localhost:3100` |
 | Tempo | `localhost:3200` |
 
+</details>
+
+<details>
+<summary><strong>Frontend</strong></summary>
+
 ## Frontend
 
 Next.js 16 dashboard (App Router, TypeScript, Tailwind CSS v4, shadcn/ui) served through nginx reverse proxy.
@@ -153,6 +205,94 @@ Next.js 16 dashboard (App Router, TypeScript, Tailwind CSS v4, shadcn/ui) served
 - **Device Table** — lists all user devices with type badges.
 - **InfluxDB Explorer** — embedded InfluxDB UI iframe for direct time-series data exploration.
 - **Mailpit Inbox** — embedded Mailpit iframe showing alert emails sent by alert-service.
+
+</details>
+
+<details>
+<summary><strong>CI/CD Pipeline</strong></summary>
+
+## CI/CD
+
+### Pipeline Overview
+
+```
+push to main / tag v*
+    │
+    ▼
+build-and-push.yml
+    ├── detect-changes      ← dorny/paths-filter scans services/** + frontend/
+    ├── build matrix        ← one runner per changed service (parallel)
+    │     ├── OIDC → assume iot-tracker-dev-gha-deploy role
+    │     ├── docker buildx → push to ECR Public
+    │     └── tags: <sha> + latest (insight-service: +bedrock variant)
+    ▼
+deploy-eks.yml (auto-triggered or manual)
+    ├── OIDC → assume deploy role
+    ├── helm upgrade infra (values-eks.yaml)
+    ├── helm upgrade observability (values-eks.yaml)
+    └── helm upgrade microservices (values-eks.yaml, --set image.tag=<sha>)
+```
+
+- **No stored credentials** — all AWS access via GitHub OIDC federated identity.
+- **Change detection** — only rebuilds services with actual file changes.
+- **SHA-pinned deploys** — EKS never runs `:latest`, always a specific commit SHA.
+- **Concurrency guard** — only one deploy-eks run at a time.
+
+### Manual Operations
+
+```bash
+# Rebuild a single service from any branch:
+gh workflow run build-test.yml --ref <branch> -f service=<service-name>
+
+# Deploy to EKS manually:
+gh workflow run deploy-eks.yml
+```
+
+### Automated Code Review
+
+Every pull request triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against `CLAUDE.md` conventions and posts inline feedback. Mention `@claude` in a PR comment for targeted review.
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `build-and-push.yml` | Push to `main` or `v*` tag | Detects changed services via `dorny/paths-filter`, builds Docker images, pushes to ECR with SHA + latest tags. insight-service dual-builds: ollama + bedrock variants. |
+| `deploy-eks.yml` | After successful build, or manual `workflow_dispatch` | OIDC auth → `helm upgrade` infra → observability → microservices with SHA-pinned image tags |
+| `build-test.yml` | Manual `workflow_dispatch` | Single-service rebuild utility (uses `environment:dev` for OIDC from any branch) |
+
+All workflows use **GitHub OIDC** → IAM role assumption (no stored AWS credentials).
+
+</details>
+
+<details>
+<summary><strong>Production Hardening</strong></summary>
+
+### Production Hardening
+
+| Feature | Configuration |
+|---------|--------------|
+| **HPA** | All 7 services autoscale: min 2, max 5 replicas, target 70% CPU |
+| **PDB** | All 7 services: minAvailable=1 (survives node drain) |
+| **NetworkPolicies** | Default-deny + per-service ingress/egress allowlists |
+| **CloudWatch Alarms** | RDS CPU >80%, connections >53/66 max, free storage <4 GiB, EKS failed nodes |
+| **TLS everywhere** | Let's Encrypt cert, TLS termination at ingress |
+| **Secrets in Secrets Manager** | No plaintext in values files; synced via ExternalSecrets |
+| **IRSA** | Pod-level IAM — insight-service has Bedrock access only |
+
+### NetworkPolicy Rules
+
+| Service | Inbound from | Outbound to |
+|---------|-------------|-------------|
+| user-service | ingress, device-svc, usage-svc, insight-svc, frontend | RDS (3306) |
+| device-service | ingress, usage-svc | RDS (3306), user-svc (8080) |
+| ingestion-service | ingress | MSK (9098) |
+| usage-service | ingress, insight-svc | MSK (9098), InfluxDB (8086), user-svc, device-svc |
+| alert-service | ingress | MSK (9098), RDS (3306), Mailpit (1025) |
+| insight-service | ingress | usage-svc (8083), Bedrock (443) |
+| frontend | ingress | user-svc (8080) |
+
+</details>
+
+<details>
+<summary><strong>Deployments (Local / EKS)</strong></summary>
 
 ## Run With Docker
 
@@ -281,64 +421,6 @@ helm uninstall infra
 minikube stop
 ```
 
----
-
-## Health Checks
-
-Each service exposes Spring Actuator endpoints:
-
-```
-http://localhost:{port}/actuator/health
-http://localhost:{port}/actuator/prometheus
-```
-
-Ports: user-service `8080`, device-service `8081`, ingestion-service `8082`, usage-service `8083`, alert-service `8084`, insight-service `8085`.
-
-## CI/CD
-
-### Pipeline Overview
-
-```
-push to main / tag v*
-    │
-    ▼
-build-and-push.yml
-    ├── detect-changes      ← dorny/paths-filter scans services/** + frontend/
-    ├── build matrix        ← one runner per changed service (parallel)
-    │     ├── OIDC → assume iot-tracker-dev-gha-deploy role
-    │     ├── docker buildx → push to ECR Public
-    │     └── tags: <sha> + latest (insight-service: +bedrock variant)
-    ▼
-deploy-eks.yml (auto-triggered or manual)
-    ├── OIDC → assume deploy role
-    ├── helm upgrade infra (values-eks.yaml)
-    ├── helm upgrade observability (values-eks.yaml)
-    └── helm upgrade microservices (values-eks.yaml, --set image.tag=<sha>)
-```
-
-- **No stored credentials** — all AWS access via GitHub OIDC federated identity.
-- **Change detection** — only rebuilds services with actual file changes.
-- **SHA-pinned deploys** — EKS never runs `:latest`, always a specific commit SHA.
-- **Concurrency guard** — only one deploy-eks run at a time.
-
-### Manual Operations
-
-```bash
-# Rebuild a single service from any branch:
-gh workflow run build-test.yml --ref <branch> -f service=<service-name>
-
-# Deploy to EKS manually:
-gh workflow run deploy-eks.yml
-```
-
-### Automated Code Review
-
-Every pull request triggers a Claude Code review (`.github/workflows/claude-review.yml`). Claude checks against `CLAUDE.md` conventions and posts inline feedback. Mention `@claude` in a PR comment for targeted review.
-
-## Real Usage
-
-I connected the system to my own home using Shelly smartplugs. Check out the `/shelly` folder for how you can do it too!
-
 ## Run on AWS EKS (Production)
 
 The application runs on AWS EKS with managed infrastructure (RDS, MSK Serverless) and full production hardening. All infrastructure is defined in Terraform; deployments use the same Helm charts with EKS-specific value overlays.
@@ -400,39 +482,11 @@ Installed via `scripts/eks-bootstrap.sh`:
 - **cert-manager** — DNS-01 challenges via Route53 for Let's Encrypt certs
 - **metrics-server** — enables `kubectl top` and HPA CPU metrics
 
-### Production Hardening
 
-| Feature | Configuration |
-|---------|--------------|
-| **HPA** | All 7 services autoscale: min 2, max 5 replicas, target 70% CPU |
-| **PDB** | All 7 services: minAvailable=1 (survives node drain) |
-| **NetworkPolicies** | Default-deny + per-service ingress/egress allowlists |
-| **CloudWatch Alarms** | RDS CPU >80%, connections >53/66 max, free storage <4 GiB, EKS failed nodes |
-| **TLS everywhere** | Let's Encrypt cert, TLS termination at ingress |
-| **Secrets in Secrets Manager** | No plaintext in values files; synced via ExternalSecrets |
-| **IRSA** | Pod-level IAM — insight-service has Bedrock access only |
-
-### NetworkPolicy Rules
-
-| Service | Inbound from | Outbound to |
-|---------|-------------|-------------|
-| user-service | ingress, device-svc, usage-svc, insight-svc, frontend | RDS (3306) |
-| device-service | ingress, usage-svc | RDS (3306), user-svc (8080) |
-| ingestion-service | ingress | MSK (9098) |
-| usage-service | ingress, insight-svc | MSK (9098), InfluxDB (8086), user-svc, device-svc |
-| alert-service | ingress | MSK (9098), RDS (3306), Mailpit (1025) |
-| insight-service | ingress | usage-svc (8083), Bedrock (443) |
-| frontend | ingress | user-svc (8080) |
 
 ### CI/CD (GitHub Actions)
 
-| Workflow | Trigger | What it does |
-|----------|---------|-------------|
-| `build-and-push.yml` | Push to `main` or `v*` tag | Detects changed services via `dorny/paths-filter`, builds Docker images, pushes to ECR with SHA + latest tags. insight-service dual-builds: ollama + bedrock variants. |
-| `deploy-eks.yml` | After successful build, or manual `workflow_dispatch` | OIDC auth → `helm upgrade` infra → observability → microservices with SHA-pinned image tags |
-| `build-test.yml` | Manual `workflow_dispatch` | Single-service rebuild utility (uses `environment:dev` for OIDC from any branch) |
 
-All workflows use **GitHub OIDC** → IAM role assumption (no stored AWS credentials).
 
 ### Prerequisites
 
@@ -480,26 +534,23 @@ helm uninstall infra
 cd terraform/envs/dev && terraform destroy
 ```
 
-### Cost Estimate (dev)
+</details>
 
-| Component | Monthly (approx) |
-|-----------|-----------------|
-| EKS control plane | $73 |
-| 3× t3.large nodes | $180 |
-| RDS db.t3.medium | $50 |
-| MSK Serverless | $10–30 (usage-based) |
-| NAT Gateway | $35 |
-| EBS volumes (gp3) | $25 |
-| NLB | $20 |
-| **Total** | **~$400/mo** |
+---
+
+## Real Usage
+
+I connected the system to my own home using Shelly smartplugs. Check out the `/shelly` folder for how you can do it too!
+
 
 ---
 
 ## Project Layout
 
 ```
-services/               # Six Spring Boot microservices
-frontend/               # Next.js 16 frontend (App Router, Tailwind v4, shadcn/ui)
+services/               # 6 Spring Boot microservices (user, device, ingestion, usage, alert, insight)
+frontend/               # Next.js 16 (App Router, Tailwind v4, shadcn/ui)
+shelly/                 # Shelly smart plug integration script + setup guide
 observability/
   ├── prometheus/       # prometheus.yml — scrape configs for all services
   ├── grafana/          # Provisioned datasources (Prometheus, Loki, Tempo) + 4 dashboards
@@ -507,19 +558,19 @@ observability/
   ├── promtail/         # promtail.yaml — Docker SD, ECS JSON pipeline
   └── tempo/            # tempo.yaml — OTLP receivers, local storage
 k8s/
-  ├── charts/infra-chart/          # MySQL, Kafka, InfluxDB, Mailpit, Kafka UI, Ollama
-  ├── charts/observability-chart/  # Prometheus, Grafana, Loki, Promtail, Tempo
-  └── charts/microservices-chart/  # All 7 services + shared ConfigMap/Secret/Ingress
+  └── charts/
+      ├── infra-chart/          # MySQL (primary + replica), Kafka, InfluxDB, Redis, Mailpit, Kafka UI, Ollama
+      ├── observability-chart/  # Prometheus, Grafana, Loki, Promtail, Tempo
+      └── microservices-chart/  # 6 services + frontend, shared ConfigMap/Secret/Ingress, HPA/PDB/NetworkPolicies
 terraform/
-  └── envs/dev/         # VPC, EKS, RDS, MSK, IAM, Route53, ACM, CloudWatch Alarms
+  └── envs/dev/         # VPC, EKS, RDS, MSK Serverless, IAM (IRSA), Route53, ACM, CloudWatch + SNS alarms
 scripts/
-  └── eks-bootstrap.sh  # Installs all EKS cluster addons (Phase 2)
+  └── eks-bootstrap.sh  # Installs EKS cluster addons (ALB Controller, ESO, cert-manager, etc.)
 .github/workflows/
-  ├── build-and-push.yml    # CI: build + push to ECR on merge
-  ├── deploy-eks.yml        # CD: deploy to EKS via Helm
-  ├── build-test.yml        # Manual single-service rebuild
+  ├── build-and-push.yml    # CI: detect changed services, build, push to ECR
+  ├── deploy-eks.yml        # CD: helm upgrade infra → observability → microservices
+  ├── build-test.yml        # Manual single-service rebuild from any branch
   └── claude-review.yml     # AI code review on PRs
 docker-compose.yml                 # Core application stack
 docker-compose.observability.yml   # Prometheus, Grafana, Loki, Promtail, Tempo
-eks_plan.md                        # EKS migration plan + phase progress
 ```
