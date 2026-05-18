@@ -7,7 +7,7 @@ Stores, processes, and delivers real-time alerts and AI insights.
 
 Built for real production workloads with AWS Elastic Kubernetes Service, microservices, and end-to-end observability.
 
-> Note: live deployment is currently down to save on costs
+> Note: Live deployment is currently down to save on costs
 
 
 [![Github Release](https://img.shields.io/github/v/release/chieaid24/energy-tracker)](https://github.com/chieaid24/energy-tracker/releases)
