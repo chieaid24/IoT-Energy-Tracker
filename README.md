@@ -7,7 +7,7 @@ Stores, processes, and delivers real-time alerts and AI insights.
 
 Built for real production workloads with AWS Elastic Kubernetes Service, microservices, and end-to-end observability.
 
-> Note: Live deployment is currently down to save on costs
+> Note: live deployment is currently down to save on costs
 
 
 [![Github Release](https://img.shields.io/github/v/release/chieaid24/energy-tracker)](https://github.com/chieaid24/energy-tracker/releases)
@@ -18,14 +18,19 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
 </p>
 
 ## Technical Highlights
-- Provisioned AWS resources as **100% Infrastructure as Code** with Terraform, deployed through Helm.
-- Deployed **cloud-native Kubernetes** cluster with HPA autoscaling, self-healing, and rolling deployments.
-- Built **automated CI/CD** pipeline with GitHub Actions that builds changed services -> pushes to ECR -> deploys to EKS.
-- Implemented **full observability stack** with tracing, log aggregation, and metrics collected in Grafana.
-- Designed **scalable database layer** with MySQL + read replicas for relational data and InfluxDB for time-series usage analytics.
-- Maintained zero-secret codebase by storing credentials in **AWS Secrets Manager** and syncing to cluster via IRSA-bound role.
 
+**Infrastructure**
+- AWS resources are **100% Infrastructure as Code** with Terraform, deployed through Helm.
+- **Cloud-native Kubernetes** with HPA autoscaling, self-healing, and rolling deployments.
 
+**CI/CD**
+- Automated **CI/CD pipeline** with **GitHub Actions** that builds -> tests -> deploys to EKS.
+
+**Observability**
+- Full **observability stack** with tracing, log aggregation, and metrics collected in Grafana.
+
+**Data Layer**
+- Scalable DB layer with **MySQL + read replicas** for relational data and **InfluxDB + Redis** for real-time analytics.
 
 ## Demo
 
@@ -34,13 +39,19 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
 | Insert video here | <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/fb54b941-55de-4d19-b0a1-071e29329a60" /> |
 
 ## Functional Overview
+**Data Pipeline**
+- Ingests **streamed power readings** from IoT devices into Kafka, writing consumption data into InfluxDB and enabling temporal aggregations and per-device statistics.
+- Caches frequent queries in **Redis** to keep reads fast.
 
-- Ingests **real-time power readings** from IoT devices in a user's home through REST into Kafka.
-  - Stores consumption data as a time-series in InfluxDB, enabling hourly/daily/weekly aggregations and per-device range queries.
-- Emits **threshold-based alerts** when usage exceeds configured limits, alert-service sends an email notification with SMTP and persists in MySQL.
-- Generates **AI energy insights** by aggregating recent usage data and querying an LLM (Ollama / Bedrock) for sustainability-focused efficiency recommendations.
-- **Real-time dashboard** with live summary cards, energy charts, alert history, and an AI insights panel, continuously polling backend services.
-  - Manages sign-in and user management with **JWT-secured REST APIs** and Google OAuth.
+**Alerts**
+- Emits **real-time alerts** when usage exceeds configured limits, sending email notifications and persisting events in MySQL.
+
+**AI Insights**
+- Generates **sustainability recommendations,** contextualized by your recent usage, devices, time of day, location, and more.
+
+**Dashboard and Auth**
+- **Real-time dashboard** with live summary cards, energy charts, alert history, and AI insights panel.
+- Handles auth with **Google OAuth and credential login**, issuing JWTs with stateless backend validation and middleware-enforced route protection.
 
 
 ## Tools Used
@@ -95,7 +106,7 @@ Application runs on AWS EKS with managed RDS and MSK Serverless.
                      ▼                    ▼
                  RDS MySQL           MSK Serverless
 
-        insight-service ──► AWS Bedrock (Claude Haiku 4.5)
+        insight-service ──► AWS Bedrock (Claude Haiku)
                             via cross-region inference profile (IRSA)
 ```
 
@@ -105,6 +116,8 @@ Application runs on AWS EKS with managed RDS and MSK Serverless.
 
 <details>
 <summary><strong>⚙️ Services</strong></summary>
+
+<br>
 
 | Service | Port | Persistence | What it does |
 |---|---|---|---|
@@ -121,11 +134,13 @@ Application runs on AWS EKS with managed RDS and MSK Serverless.
 <details>
 <summary><strong>🎨 Frontend</strong></summary>
 
+<br>
+
 Next.js dashboard (App Router, TypeScript, Tailwind, shadcn/ui) served through nginx reverse proxy.
 
 ### Auth
 
-- **Google OAuth 2.0 + credentials login** through NextAuth.js - backend validates tokens and issues HMAC-SHA signed JWTs (24h expiry).
+- **Google OAuth 2.0 + credentials login** through NextAuth.js - backend validates tokens and issues HMAC-SHA signed JWTs.
 - **Route protection** - middleware redirects unauthenticated users, stateless backend with no server-side sessions.
 
 ### Pages
@@ -148,6 +163,8 @@ Next.js dashboard (App Router, TypeScript, Tailwind, shadcn/ui) served through n
 
 <details>
 <summary><strong>🔍 Observability</strong></summary>
+
+<br>
 
 All 6 services are tracked across the three pillars, all aggregated in Grafana.
 
@@ -174,6 +191,8 @@ Spring Boot Services
 
 <details>
 <summary><strong>🚀 CI/CD Pipeline</strong></summary>
+
+<br>
 
 ### Overview
 
@@ -223,7 +242,9 @@ All workflows use **GitHub OIDC**, so IAM role assumption (no stored AWS credent
 <details>
 <summary><strong>📦 Deployments (Local / EKS)</strong></summary>
 
-Three deployment targets: Docker Compose (local dev), Minikube (local K8s), and AWS EKS (production).
+<br>
+
+Three deployment targets: Docker Compose (local dev), Minikube (local k8s), and AWS EKS (production).
 
 ## Run With Docker
 
@@ -294,6 +315,8 @@ cd terraform/envs/dev && terraform destroy
 </details>
 <details>
 <summary><strong>💵 Cost</strong></summary>
+
+<br>
 
 ### AWS Management Costs
 | Component | Spec | Monthly |
