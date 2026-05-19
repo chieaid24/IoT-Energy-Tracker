@@ -15,9 +15,6 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
 
 <p align="center">
 
-
-
-
   <img width="800" alt="IoT Telemetry System Design" src="https://github.com/user-attachments/assets/998807a5-7010-4095-b0aa-1fb773d4f4ec" />
 </p>
 
@@ -51,7 +48,7 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
         <video src="https://github.com/user-attachments/assets/2bcbd484-bce7-4f25-9c6c-77020a187b9e" width="100%"></video>
       </td>
       <td align="center">
-        <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/3affd3c4-1aa6-499c-9e9a-19c0c9cd806d" />
+        <img width="1916" height="838" alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/3affd3c4-1aa6-499c-9e9a-19c0c9cd806d" />
       </td>
     </tr>
     <tr>
