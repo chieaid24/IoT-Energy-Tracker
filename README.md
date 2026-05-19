@@ -14,6 +14,10 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
 
 
 <p align="center">
+
+
+
+
   <img width="800" alt="IoT Telemetry System Design" src="https://github.com/user-attachments/assets/998807a5-7010-4095-b0aa-1fb773d4f4ec" />
 </p>
 
@@ -34,14 +38,36 @@ Built for real production workloads with AWS Elastic Kubernetes Service, microse
 
 ## Demo
 
-| User Flow | Grafana JVM Metrics |
-|---|---|
-| Insert video here | <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/fb54b941-55de-4d19-b0a1-071e29329a60" /> |
+<table>
+  <thead>
+    <tr>
+      <th width="50%" align="center">User Flow</th>
+      <th width="50%" align="center">Grafana Dashboards</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="2" align="center">
+        <video src="https://github.com/user-attachments/assets/2bcbd484-bce7-4f25-9c6c-77020a187b9e" width="100%"></video>
+      </td>
+      <td align="center">
+        <img alt="Grafana JVM Metrics" src="https://github.com/user-attachments/assets/3affd3c4-1aa6-499c-9e9a-19c0c9cd806d" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img width="1916" height="838" alt="Grafana Service Health Overview" src="https://github.com/user-attachments/assets/fbcfc237-cfe5-4313-b558-8d0a82fa640c" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
 
 ## Functional Overview
 **Data Pipeline**
 - Ingests **streamed power readings** from IoT devices into Kafka, writing consumption data into InfluxDB and enabling temporal aggregations and per-device statistics.
-- Caches frequent queries in **Redis** to keep reads fast.
+- Caches frequent queries in **Redis** to avoid bottlenecks with horizontally scaled microservices
 
 **Alerts**
 - Emits **real-time alerts** when usage exceeds configured limits, sending email notifications and persisting events in MySQL.
